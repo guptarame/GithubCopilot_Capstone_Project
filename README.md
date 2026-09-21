@@ -27,11 +27,11 @@ mvn test -Dbrowser=firefox -Dheadless=true -DbaseUrl=https://askomdch.com/accoun
 ```
 
 ## SDLC Artifacts
-- `requirements.md`
-- `architecture.md`
-- `design-review.md`
-- `impl-plan.md`
-- `review.md`
-- `verify.md`
-- `pr-description.md`
+- `docs/sdlc/requirements.md`
+- `docs/sdlc/architecture.md`
+- `docs/sdlc/design-review.md`
+- `docs/sdlc/impl-plan.md`
+- `docs/sdlc/code-review-report.md`
+- `docs/sdlc/verify.md`
+- `docs/sdlc/pr-description.md`
 

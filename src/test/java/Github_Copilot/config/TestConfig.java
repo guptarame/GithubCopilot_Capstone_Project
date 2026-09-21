@@ -1,5 +1,7 @@
 package Github_Copilot.config;
 
+import Github_Copilot.data.TestData;
+
 public final class TestConfig {
 
     private TestConfig() {
@@ -15,6 +17,15 @@ public final class TestConfig {
 
     public static boolean headless() {
         return Boolean.parseBoolean(fromSystemOrEnv("headless", "HEADLESS", "false"));
+    }
+
+    public static int pageLoadTimeout() {
+        String value = fromSystemOrEnv("pageLoadTimeout", "PAGE_LOAD_TIMEOUT", String.valueOf(TestData.DEFAULT_PAGE_LOAD_TIMEOUT_SECONDS));
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException ignored) {
+            return TestData.DEFAULT_PAGE_LOAD_TIMEOUT_SECONDS;
+        }
     }
 
     public static String validUsername() {

@@ -1,78 +1,68 @@
 package Github_Copilot.pages;
 
 import org.openqa.selenium.By;
-import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.ui.ExpectedCondition;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.time.Duration;
-
-public class LoginPage {
-
-    private final WebDriver driver;
-    private final WebDriverWait wait;
+public class LoginPage extends BasePage {
 
     private final By usernameField = By.id("username");
     private final By passwordField = By.id("password");
     private final By rememberMeCheckbox = By.id("rememberme");
     private final By loginButton = By.name("login");
     private final By lostPasswordLink = By.linkText("Lost your password?");
-    private final By messageBanner = By.cssSelector("ul.woocommerce-error, div.woocommerce-MyAccount-content, div.woocommerce-notices-wrapper");
+    private final By dashboardContent = By.cssSelector("div.woocommerce-MyAccount-content");
+    private final By errorBanner = By.cssSelector("ul.woocommerce-error, div.woocommerce-notices-wrapper");
+    private final By logoutLink = By.linkText("Log out");
 
     public LoginPage(WebDriver driver) {
-        this.driver = driver;
-        this.wait = new WebDriverWait(driver, Duration.ofSeconds(12));
+        super(driver);
     }
 
-    public LoginPage open(String url) {
-        driver.get(url);
-        wait.until(ExpectedConditions.visibilityOfElementLocated(usernameField));
+    public LoginPage openPage(String url) {
+        super.navigateTo(url);
+        waitForVisible(usernameField);
+        return this;
+    }
+
+    public LoginPage load(String url) {
+        super.navigateTo(url);
         return this;
     }
 
     public boolean isUsernameVisible() {
-        return driver.findElement(usernameField).isDisplayed();
+        return isVisible(usernameField);
     }
 
     public boolean isPasswordVisible() {
-        return driver.findElement(passwordField).isDisplayed();
+        return isVisible(passwordField);
     }
 
     public boolean isRememberMeVisible() {
-        return driver.findElement(rememberMeCheckbox).isDisplayed();
+        return isVisible(rememberMeCheckbox);
     }
 
     public boolean isLoginButtonVisible() {
-        return driver.findElement(loginButton).isDisplayed();
+        return isVisible(loginButton);
     }
 
     public boolean isLostPasswordVisible() {
-        return driver.findElement(lostPasswordLink).isDisplayed();
+        return isVisible(lostPasswordLink);
     }
 
     public LoginPage enterUsername(String value) {
-        WebElement username = driver.findElement(usernameField);
-        username.clear();
-        username.sendKeys(value);
+        type(usernameField, value);
         return this;
     }
 
     public LoginPage enterPassword(String value) {
-        WebElement password = driver.findElement(passwordField);
-        password.clear();
-        password.sendKeys(value);
+        type(passwordField, value);
         return this;
     }
 
-    public LoginPage setRememberMe(boolean enabled) {
-        WebElement checkbox = driver.findElement(rememberMeCheckbox);
-        if (checkbox.isSelected() != enabled) {
-            checkbox.click();
+    public void setRememberMe(boolean enabled) {
+        if (driver.findElement(rememberMeCheckbox).isSelected() != enabled) {
+            click(rememberMeCheckbox);
         }
-        return this;
     }
 
     public boolean isRememberMeSelected() {
@@ -80,50 +70,47 @@ public class LoginPage {
     }
 
     public LoginPage submitLogin() {
-        driver.findElement(loginButton).click();
+        click(loginButton);
         return this;
     }
 
     public String getCurrentUrl() {
-        return driver.getCurrentUrl();
+        return currentUrl();
+    }
+
+    public String getFeedbackMessage() {
+        if (anyVisible(errorBanner)) {
+            return textOfFirstVisible(errorBanner);
+        }
+
+        if (anyVisible(dashboardContent)) {
+            return textOf(dashboardContent);
+        }
+
+        return "";
     }
 
     public String readFeedbackMessage() {
-        wait.until(anyLoginResultVisible());
-        return driver.findElements(messageBanner)
-                .stream()
-                .filter(WebElement::isDisplayed)
-                .map(WebElement::getText)
-                .filter(text -> text != null && !text.isBlank())
-                .findFirst()
-                .orElse("");
+        return getFeedbackMessage();
     }
 
-    public LoginPage clickLostPassword() {
-        driver.findElement(lostPasswordLink).click();
+    public boolean isLoggedIn() {
+        String dashboardText = anyVisible(dashboardContent) ? textOf(dashboardContent) : "";
+        String lowerText = dashboardText.toLowerCase();
+        return anyVisible(logoutLink) || lowerText.contains("hello") || lowerText.contains("log out");
+    }
+
+    public String getDashboardText() {
+        return anyVisible(dashboardContent) ? textOf(dashboardContent) : "";
+    }
+
+    public LoginPage waitForDashboard() {
+        wait.until(webDriver -> isLoggedIn());
         return this;
     }
 
-    private ExpectedCondition<Boolean> anyLoginResultVisible() {
-        return webDriver -> {
-            if (webDriver == null) {
-                return false;
-            }
-
-            try {
-                return webDriver.findElements(messageBanner)
-                        .stream()
-                        .anyMatch(element -> {
-                            try {
-                                return element.isDisplayed() && !element.getText().isBlank();
-                            } catch (StaleElementReferenceException ignored) {
-                                return false;
-                            }
-                        });
-            } catch (StaleElementReferenceException ignored) {
-                return false;
-            }
-        };
+    public void clickLostPassword() {
+        click(lostPasswordLink);
     }
 }
 

@@ -68,3 +68,7 @@ This PR adds a reusable Selenium test automation framework for login testing. It
 - [ ] Logs and screenshots are useful
 - [ ] Verification report is complete
 ```
+## Output Files
+- **PR Description:** `docs/sdlc/pr-description.md`
+- **Git Branch:** `feature/selenium-login-automation`
+- **GitHub PR:** Created with full description and evidence

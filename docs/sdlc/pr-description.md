@@ -1,110 +1,93 @@
-# [Feature] Complete Selenium test automation framework for login functionality
+# [Feature] Complete Selenium login automation framework
 
 ## Summary
 
-This PR implements a Selenium-based login automation framework for the My Account authentication flow. It adds reusable page-object abstractions, a browser lifecycle manager, configuration-driven timeout support, structured runtime logging, and failure screenshots to make the login scenarios easier to maintain and diagnose.
+This PR adds a reusable Selenium test automation framework for the My Account login flow. It includes page-object abstractions, browser lifecycle setup, configuration-driven execution, structured logging, screenshots on failure, and JUnit lifecycle diagnostics.
 
-The work is aligned with the SDLC artifacts in this repository, including requirements, architecture, design review, implementation planning, and verification evidence. This establishes a maintainable foundation for future UI automation coverage.
+The implementation is traceable to the SDLC artifacts under `docs/sdlc/`, including requirements, architecture, design review, implementation planning, code review, and verification evidence.
 
 ## Changes Made
 
-### Framework additions and updates
-- Added configurable page-load timeout support in `TestConfig`
-- Updated `BaseTest` to apply timeouts and manage driver lifecycle
-- Added a reusable `BasePage` abstraction for shared waits and UI actions
-- Refactored `LoginPage` to extend `BasePage`
-- Added `LogUtil` for timestamped, structured logging
-- Added `ScreenshotUtil` for saved failure artifacts in `target/screenshots`
-- Added `TestLifecycleListener` for JUnit lifecycle diagnostics
-- Added `TestData` as a centralized configuration and credential constant source
-- Updated `LoginPageTests` to use the page-object pattern and shared assertions
+- Added browser/test lifecycle support in `BaseTest`
+- Added a reusable `BasePage` abstraction for bounded explicit waits
+- Added/updated `LoginPage` for login, validation, lost-password, and authenticated-state interactions
+- Added configuration support in `TestConfig`, including browser, headless mode, target URL, credentials, and page-load timeout handling
+- Added shared test data in `TestData`
+- Added structured logging through `LogUtil`
+- Added screenshot capture through `ScreenshotUtil`
+- Added JUnit diagnostics through `TestLifecycleListener`
+- Added login scenario coverage in `LoginPageTests`
+- Added/updated SDLC artifacts under `docs/sdlc/`
 
-### Files changed / notable additions
+## Test Evidence
 
-#### Core framework
-- `src/test/java/Github_Copilot/base/BaseTest.java`
-- `src/test/java/Github_Copilot/pages/BasePage.java`
-- `src/test/java/Github_Copilot/pages/LoginPage.java`
+Primary verification evidence is recorded in `docs/sdlc/verification-report.md`.
 
-#### Utilities and configuration
-- `src/test/java/Github_Copilot/config/TestConfig.java`
-- `src/test/java/Github_Copilot/data/TestData.java`
-- `src/test/java/Github_Copilot/utils/LogUtil.java`
-- `src/test/java/Github_Copilot/utils/ScreenshotUtil.java`
-- `src/test/java/Github_Copilot/listeners/TestLifecycleListener.java`
+### Observed command results
 
-#### Test coverage
-- `src/test/java/Github_Copilot/tests/LoginPageTests.java`
+| Command | Result |
+|---|---|
+| `mvn clean test` | `BUILD SUCCESS`; 7 tests, 0 failures, 0 errors, 3 skipped |
+| `mvn clean test -Dbrowser=chrome -Dheadless=true` | `BUILD SUCCESS`; 7 tests, 0 failures, 0 errors, 3 skipped |
+| `mvn test -Dheadless=true` | `BUILD SUCCESS`; 7 tests, 0 failures, 0 errors, 3 skipped |
+| `mvn clean test -Dbrowser=firefox -Dheadless=true` | `BUILD FAILURE`; 7 tests, 0 failures, 4 errors, 3 skipped |
+| `mvn test -Dheadless=true -DpageLoadTimeout=0` | `BUILD SUCCESS`; invalid timeout value fell back safely |
+| `mvn dependency:tree` | `BUILD SUCCESS`; dependency tree resolved; no CVE/SCA scan was run |
 
-#### SDLC artifacts
-- `docs/sdlc/requirements.md`
-- `docs/sdlc/architecture.md`
-- `docs/sdlc/design-review.md`
-- `docs/sdlc/code-review-report.md`
-- `docs/sdlc/impl-plan.md`
-- `docs/sdlc/verify.md`
+### Chrome headless accounting
 
-## Verification Evidence
-
-### Command executed
-```powershell
-mvn test
-```
-
-### Execution summary
-- **Build:** `BUILD SUCCESS`
 - **Tests run:** 7
 - **Passed:** 4
-- **Skipped:** 3
 - **Failures:** 0
 - **Errors:** 0
+- **Skipped:** 3
 
-### Passing scenarios
-- UI element visibility
-- invalid user flow
-- blank-field validation
-- lost password navigation
+Passing non-credential scenarios:
+- TS-LOG-003 unknown user
+- TS-LOG-004 blank fields
+- TS-LOG-006 lost-password navigation
+- AC-UI-001 required controls
 
-### Skipped scenarios
-- valid login — skipped because valid credentials were not provided in the environment
-- invalid password — skipped because valid credentials were not provided in the environment
-- remember-me persistence — skipped because valid credentials were not provided in the environment
+Skipped credential-dependent scenarios:
+- TS-LOG-001 valid login
+- TS-LOG-002 invalid password
+- TS-LOG-005 Remember Me
 
-### Diagnostics
-- Test lifecycle logging is active
-- Screenshot capture worked for skipped and assumption-failed scenarios
-- Maven execution completed successfully without test failures
+### Firefox headless accounting
 
-## Limitations / Follow-up Notes
+- **Tests run:** 7
+- **Failures:** 0
+- **Errors:** 4
+- **Skipped:** 3
 
-- Credential-dependent scenarios still require valid values to be provided through environment configuration.
-- This verification run validates the current local environment and build flow.
-- Browser and cross-browser configuration are implemented, but production-grade cross-browser expansion can be added as a future enhancement.
-- The remember-me persistence scenario requires valid credentials and a browser-profile setup capable of surviving restart.
+Firefox did not meet the cross-browser baseline in this environment. The observed errors were 30-second navigation timeouts while opening the live target page.
+
+## Known Limitations
+
+- Stage 6 verification is **not a full acceptance pass** because Firefox execution failed in this environment.
+- Credential-dependent scenarios were skipped because valid credentials were not supplied through environment or system-property configuration.
+- Remember Me persistence is implemented by source inspection but was not exercised end-to-end without credentials.
+- Slow-network validation was not run.
+- A dependency tree was generated, but no vulnerability/SCA scan was run.
+- Screenshot retention/redaction policy is not configured in Maven/CI.
 
 ## Reviewer Checklist
 
-- [ ] Base classes are correctly separated by responsibility
+- [ ] Framework architecture is clear and matches `docs/sdlc/architecture.md`
+- [ ] Implementation follows the approved plan in `docs/sdlc/impl-plan.md`
 - [ ] Page Object Model usage is consistent
-- [ ] Shared utilities are reusable and minimal
-- [ ] Login scenarios cover positive and negative paths
-- [ ] Assertions are meaningful and stable
-- [ ] Browser configuration works as expected
-- [ ] Timeouts are reasonable
-- [ ] Logging and screenshot capture are wired correctly
-- [ ] Implementation matches `requirements.md`
-- [ ] Implementation matches `architecture.md`
-- [ ] Design review concerns were addressed
-- [ ] Verification evidence matches the project SDLC artifacts
-- [ ] Maven build runs successfully
+- [ ] Browser lifecycle and cleanup are reliable
+- [ ] Timeouts and explicit waits are bounded and maintainable
+- [ ] Credential-dependent tests remain externalized and do not log secrets
+- [ ] Chrome non-credential execution evidence is acceptable
+- [ ] Firefox navigation timeout blocker is understood before claiming cross-browser support
+- [ ] Verification evidence in `docs/sdlc/verification-report.md` is reviewed
+- [ ] Follow-up plan exists for credentials, Firefox stability, slow-network testing, and dependency scanning
 
-## Recommended Merge Notes
+## Merge Guidance
 
-- Merge after confirming environment credentials for the credential-dependent scenarios.
-- Keep credentials externalized through environment variables or secure configuration.
-- Use this framework as the base for additional authenticated UI coverage.
-- Preserve the SDLC artifacts for traceability and auditability.
+Treat this PR as reviewable framework work, but do not claim full cross-browser or credential-flow acceptance until:
 
-## GitHub / PR Note
-
-This repository does not currently expose GitHub CLI authentication in the local environment, so a remote push and PR creation could not be completed from this session. The PR description above is prepared and ready to use once credentials or a connected GitHub workflow are available.
+1. Valid non-production credentials are supplied securely and TS-LOG-001, TS-LOG-002, and TS-LOG-005 are rerun.
+2. Firefox navigation timeouts are investigated and the Firefox suite is rerun successfully.
+3. Slow-network validation and an approved dependency vulnerability scan are completed if required for release.

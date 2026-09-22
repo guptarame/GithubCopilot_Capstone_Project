@@ -97,6 +97,40 @@ class LoginPageTests extends BaseTest {
     }
 
     @Test
+    @DisplayName("TS-LOG-007: Validation appears when username/email is blank")
+    void shouldShowValidationForBlankUsername() {
+        LoginPage loginPage = new LoginPage(driver).openPage(TestConfig.baseUrl());
+
+        String message = loginPage
+                .enterUsername("")
+                .enterPassword(TestConfig.invalidPassword())
+                .submitLogin()
+                .getFeedbackMessage()
+                .toLowerCase();
+
+        assertTrue(containsAny(message, List.of("username", "required", "fill")),
+                "Expected username required-field validation message.");
+        assertTrue(loginPage.isLoginFormVisible(), "Blank username should keep the user on the login form.");
+    }
+
+    @Test
+    @DisplayName("TS-LOG-008: Validation appears when password is blank")
+    void shouldShowValidationForBlankPassword() {
+        LoginPage loginPage = new LoginPage(driver).openPage(TestConfig.baseUrl());
+
+        String message = loginPage
+                .enterUsername(TestConfig.unknownUsername())
+                .enterPassword("")
+                .submitLogin()
+                .getFeedbackMessage()
+                .toLowerCase();
+
+        assertTrue(containsAny(message, List.of("password", "required", "fill")),
+                "Expected password required-field validation message.");
+        assertTrue(loginPage.isLoginFormVisible(), "Blank password should keep the user on the login form.");
+    }
+
+    @Test
     @DisplayName("TS-LOG-005: Remember me persists the session across a browser restart")
     void shouldPersistSessionWhenRememberMeIsEnabled() throws IOException {
         Assumptions.assumeTrue("chrome".equals(TestConfig.browser()),

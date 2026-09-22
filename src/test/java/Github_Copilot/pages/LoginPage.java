@@ -92,11 +92,16 @@ public class LoginPage extends BasePage {
             return textOf(dashboardContent);
         }
 
-        return "";
+        return getValidationMessage();
     }
 
     public String readFeedbackMessage() {
         return getFeedbackMessage();
+    }
+
+    public String getValidationMessage() {
+        String usernameValidation = validationMessage(usernameField);
+        return !usernameValidation.isBlank() ? usernameValidation : validationMessage(passwordField);
     }
 
     public boolean isLoggedIn() {
@@ -127,11 +132,11 @@ public class LoginPage extends BasePage {
     }
 
     private boolean hasNativeValidationMessage() {
-        return hasValidationMessage(usernameField) || hasValidationMessage(passwordField);
+        return !getValidationMessage().isBlank();
     }
 
-    private boolean hasValidationMessage(By locator) {
+    private String validationMessage(By locator) {
         String validationMessage = driver.findElement(locator).getAttribute("validationMessage");
-        return validationMessage != null && !validationMessage.isBlank();
+        return validationMessage == null ? "" : validationMessage;
     }
 }

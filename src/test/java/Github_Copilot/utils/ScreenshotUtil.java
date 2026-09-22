@@ -35,8 +35,8 @@ public final class ScreenshotUtil {
             Files.copy(source.toPath(), destination);
             LogUtil.info("Saved screenshot to " + destination.toAbsolutePath());
             return destination;
-        } catch (IOException ex) {
-            LogUtil.error("Unable to capture screenshot: " + ex.getMessage());
+        } catch (IOException | RuntimeException ex) {
+            LogUtil.error("Unable to capture screenshot", ex);
             return null;
         }
     }
@@ -47,4 +47,3 @@ public final class ScreenshotUtil {
                 : value.replaceAll("[^a-zA-Z0-9._-]", "_");
     }
 }
-

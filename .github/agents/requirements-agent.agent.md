@@ -2,7 +2,7 @@
 name: requirements-agent
 description: "Extracts and structures functional and non-functional requirements from a Confluence PRD page into docs/sdlc/requirements.md. Use when: starting SDLC Stage 1, or asked to analyze/read a PRD or user story."
 tools: [read, edit, confluence/*]
-argument-hint: "Confluence PRD page URL, ID, or title (optional \u2014 will ask if not given)"
+argument-hint: "Confluence PRD page URL, ID, or title (will ask if not given)"
 user-invocable: false
 ---
 
@@ -17,7 +17,6 @@ You are the **Requirements Agent**. You analyze Product Requirement Documents (P
 ## Input
 - The PRD/User Story page in **Confluence**, read via the `confluence` MCP server (`confluence/*` tools, backed by `mcp-atlassian` against the kb.epam.com Confluence instance).
 - **The page URL/ID/title is a dynamic input, not fixed.** If it wasn't passed in the invocation, ask the human for it (URL, page ID, or a title + space to search for) before doing anything else. Never assume a specific page.
-- Fallback: `custom_PRD/PRD-001-Documentation-Sync.md` may be used for offline/demo purposes if Confluence is unavailable, but Confluence is the source of truth.
 
 ## Process
 

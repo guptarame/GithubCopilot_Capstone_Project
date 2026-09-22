@@ -49,6 +49,10 @@ public class LoginPage extends BasePage {
         return isVisible(lostPasswordLink);
     }
 
+    public boolean isLoginFormVisible() {
+        return isUsernameVisible() && isPasswordVisible() && isLoginButtonVisible();
+    }
+
     public LoginPage enterUsername(String value) {
         type(usernameField, value);
         return this;
@@ -71,6 +75,7 @@ public class LoginPage extends BasePage {
 
     public LoginPage submitLogin() {
         click(loginButton);
+        waitForSubmissionOutcome();
         return this;
     }
 
@@ -111,7 +116,22 @@ public class LoginPage extends BasePage {
 
     public void clickLostPassword() {
         click(lostPasswordLink);
+        waitForUrlContaining("lost-password", "reset");
+    }
+
+    private void waitForSubmissionOutcome() {
+        wait.until(webDriver -> anyVisible(errorBanner)
+                || anyVisible(dashboardContent)
+                || anyVisible(logoutLink)
+                || hasNativeValidationMessage());
+    }
+
+    private boolean hasNativeValidationMessage() {
+        return hasValidationMessage(usernameField) || hasValidationMessage(passwordField);
+    }
+
+    private boolean hasValidationMessage(By locator) {
+        String validationMessage = driver.findElement(locator).getAttribute("validationMessage");
+        return validationMessage != null && !validationMessage.isBlank();
     }
 }
-
-

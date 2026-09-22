@@ -5,6 +5,7 @@ import Github_Copilot.utils.ScreenshotUtil;
 import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.opentest4j.TestAbortedException;
 import org.openqa.selenium.WebDriver;
 
 import java.util.Optional;
@@ -31,11 +32,21 @@ public class TestLifecycleListener implements BeforeEachCallback, AfterTestExecu
         Optional<Throwable> failure = context.getExecutionException();
         String testName = context.getDisplayName();
 
+        if (failure.isPresent() && failure.get() instanceof TestAbortedException) {
+            LogUtil.warn("Test skipped: " + testName + " -> " + failure.get().getMessage());
+            LogUtil.info("Finished test: " + testName);
+            return;
+        }
+
         if (failure.isPresent()) {
-            LogUtil.error("Test failed: " + testName + " -> " + failure.get().getMessage());
-            WebDriver driver = DRIVER.get();
-            if (driver != null) {
-                ScreenshotUtil.capture(driver, testName);
+            LogUtil.error("Test failed: " + testName, failure.get());
+            try {
+                WebDriver driver = DRIVER.get();
+                if (driver != null) {
+                    ScreenshotUtil.capture(driver, testName);
+                }
+            } catch (RuntimeException diagnosticFailure) {
+                LogUtil.error("Failure diagnostics could not be captured", diagnosticFailure);
             }
         } else {
             LogUtil.pass("Test passed: " + testName);
@@ -44,4 +55,3 @@ public class TestLifecycleListener implements BeforeEachCallback, AfterTestExecu
         LogUtil.info("Finished test: " + testName);
     }
 }
-

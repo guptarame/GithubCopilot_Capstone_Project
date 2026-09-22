@@ -1,288 +1,400 @@
-# Stage 4 Implementation Plan — US-AUTH-002
+# Test Automation Implementation Plan
 
-**Project:** Selenium Login Automation Capstone  
-**Artifacts:** `requirements.md`, `architecture.md`, `design-review.md`  
-**Repository baseline:** Existing Selenium Java tests under `src/test/java/Github_Copilot/`  
-**Date:** 2026-09-21  
+**Project:** Selenium Login Automation Capstone (US-AUTH-002)
+**Based on:** `docs/sdlc/architecture.md`, `docs/sdlc/design-review.md`
+**Date:** 2026-09-22
 **Agent:** planning-agent
+**Scope:** Framework hardening, scenario verification, and live-execution evidence. No
+application/product code changes are planned.
 
-## 1) Implementation Goals
+## Overview
 
-- Stabilize the current Selenium login test framework.
-- Align the test code with the approved architecture.
-- Close all design review conditions:
-  - `pageLoadTimeout`
-  - `BasePage` abstraction
-  - logging strategy
-  - screenshot capture on failure
-- Keep changes limited to test automation code and supporting docs.
-- Validate execution against the real application and on slower network conditions.
+The repository already contains the main framework components: `TestConfig`,
+`BaseTest`, `BasePage`, `LoginPage`, `TestData`, the lifecycle listener, logging,
+screenshots, and seven login/UI tests. The plan therefore treats those items as
+verification or targeted improvement work rather than greenfield implementation.
 
-**Note:** No application/product code changes are expected. Changes are limited to test framework, utilities, listeners, and documentation.
+This plan contains **14 tasks**. Estimated effort is **approximately 3 hours 10
+minutes** (execution time for live-browser and throttled-network tasks may vary).
 
-## 2) Priority Order
+| Complexity | Count |
+|---|---:|
+| High | 3 |
+| Medium | 7 |
+| Low | 4 |
 
-1. Configuration foundation
-2. Base framework and shared utilities
-3. Page object refactor
-4. Listener/reporting support
-5. Test data organization
-6. Test scenario verification
-7. Integration and resilience validation
+## Existing Baseline
 
-## 3) File-by-File Change Map
+Already present and to be verified/improved:
 
-| File | Recommended Change |
-|---|---|
-| `src/test/java/Github_Copilot/config/TestConfig.java` | Add `pageLoadTimeout()` and environment/system property support |
-| `src/test/java/Github_Copilot/base/BaseTest.java` | Apply `pageLoadTimeout`, retain driver setup, register listener if needed |
-| `src/test/java/Github_Copilot/pages/BasePage.java` | New abstract base page with common wait/action helpers |
-| `src/test/java/Github_Copilot/pages/LoginPage.java` | Extend `BasePage`, remove duplicate wait logic |
-| `src/test/java/Github_Copilot/tests/LoginPageTests.java` | Align assertions, use shared test data, verify existing scenarios |
-| `src/test/java/Github_Copilot/utils/LogUtil.java` | New structured logging utility |
-| `src/test/java/Github_Copilot/utils/ScreenshotUtil.java` | New screenshot capture utility |
-| `src/test/java/Github_Copilot/listeners/TestLifecycleListener.java` | New listener for logging and failure screenshots |
-| `src/test/java/Github_Copilot/data/TestData.java` | New centralized test data/constants class |
-| `docs/sdlc/impl-plan.md` | This implementation plan |
+- `TestConfig.pageLoadTimeout()` exists with system-property/environment fallback.
+- `BaseTest` applies page-load and implicit waits and supports Chrome/Firefox.
+- `BasePage` is abstract and `LoginPage` extends it.
+- `LogUtil`, `ScreenshotUtil`, `TestLifecycleListener`, and `TestData` exist.
+- Tests cover valid login, invalid password, unknown user, blank fields,
+  Remember Me, lost-password navigation, and required-control visibility.
 
-## 4) Prioritized Task List
+The design-review defects remain actionable: the Remember Me test does not create
+the shared profile before the first driver, and outcome reads are not synchronized
+after submit/navigation.
 
-### TASK-001 — Add `pageLoadTimeout` to `TestConfig`
-**Priority:** Critical  
-**Depends on:** None  
-**Blocks:** BaseTest update, slow-network validation
+## Task Breakdown
 
-**Changes**
-- Add `pageLoadTimeout()` to `TestConfig.java`
-- Support system property and environment variable override
-- Default to 30 seconds
+### TASK-001: Verify and harden timeout configuration (MUST FIX condition)
 
-**Acceptance**
-- Returns an integer timeout value
-- Works with `-DpageLoadTimeout=40`
-- Falls back to default when unset
+**Priority:** Critical | **Complexity:** Low | **Effort:** 10 minutes
+**Dependencies:** None | **Blocks:** TASK-002, TASK-013
 
-### TASK-002 — Update `BaseTest` to use `pageLoadTimeout`
-**Priority:** Critical  
-**Depends on:** TASK-001  
-**Blocks:** Reliable execution and validation
+**Deliverables**
 
-**Changes**
-- Apply page load timeout in driver setup
-- Keep implicit wait behavior consistent
-- Confirm browser initialization remains stable
+- Verify `TestConfig` precedence: system property, environment variable, default.
+- Keep the existing 30-second default and `-DpageLoadTimeout` support.
+- Add positive-value validation (or a documented fallback) for malformed/zero
+  timeout values; align the environment variable name with the architecture
+  (`PAGE_LOAD_TIMEOUT_SECONDS`) or document the current `PAGE_LOAD_TIMEOUT`.
 
-**Acceptance**
-- Driver uses configured page load timeout
-- No test hangs caused by default browser page loading behavior
+**Acceptance criteria**
 
-### TASK-003 — Create `BasePage` abstract class
-**Priority:** High  
-**Depends on:** None  
-**Blocks:** Page object refactor
+- `pageLoadTimeout()` returns a positive integer for default and valid overrides.
+- Invalid values do not create a zero/negative Selenium timeout.
+- A focused configuration check demonstrates precedence and fallback behavior.
 
-**Changes**
-- New `BasePage.java`
-- Add common helpers for waits, clicks, input, text retrieval, visibility checks
+### TASK-002: Verify BaseTest driver and lifecycle integration
 
-**Acceptance**
-- Shared UI operations are centralized
-- Child pages can reuse the same wait/action logic
+**Priority:** Critical | **Complexity:** Medium | **Effort:** 10 minutes
+**Dependencies:** TASK-001 | **Blocks:** TASK-013, TASK-014
 
-### TASK-004 — Refactor `LoginPage` to extend `BasePage`
-**Priority:** High  
-**Depends on:** TASK-003  
-**Blocks:** Page object standardization
+**Deliverables**
 
-**Changes**
-- Extend `BasePage`
-- Remove duplicate WebDriverWait/element access logic
-- Keep selectors and page actions intact
+- Confirm `BaseTest` applies the configured page-load timeout before tests run.
+- Confirm driver registration/cleanup works for normal and failure paths.
+- Standardize the implicit-wait policy (prefer zero, or document why the current
+  one-second value is retained); avoid `maximize()` in headless mode.
+- Preserve unsupported-browser failure and Chrome/Firefox option behavior.
 
-**Acceptance**
-- Existing login behavior still works
-- Page object is simpler and reusable
+**Acceptance criteria**
 
-### TASK-005 — Add structured logging utility
-**Priority:** High  
-**Depends on:** None  
-**Blocks:** Listener implementation
+- Each test receives a fresh driver and teardown quits it.
+- Configured page-load timeout is observable in code and a smoke execution.
+- Headless runs use a deterministic window size without an unnecessary maximize.
 
-**Changes**
-- New `LogUtil.java`
-- Provide log methods for test start, step, assertion, and error events
+### TASK-003: Verify and improve BasePage synchronization helpers
 
-**Acceptance**
-- Logs are readable in console/CI output
-- Logging is available without external dependencies
+**Priority:** High | **Complexity:** Medium | **Effort:** 10 minutes
+**Dependencies:** None | **Blocks:** TASK-004
 
-### TASK-006 — Add screenshot capture utility
-**Priority:** High  
-**Depends on:** None  
-**Blocks:** Failure listener implementation
+**Deliverables**
 
-**Changes**
-- New `ScreenshotUtil.java`
-- Save screenshots to `target/screenshots`
-- Use timestamped filenames
+- Retain the existing abstract `BasePage` API and explicit waits.
+- Make the page wait duration configurable through `TestConfig` if practical.
+- Harden `isVisible` against separate lookups/stale elements.
+- Add reusable URL and outcome wait helpers without sleeps or broad retries.
 
-**Acceptance**
-- Screenshots are created on demand
-- Failure capture is safe and does not break tests
+**Acceptance criteria**
 
-### TASK-007 — Add test lifecycle listener
-**Priority:** High  
-**Depends on:** TASK-005, TASK-006  
-**Blocks:** Failure diagnostics
+- Common navigation, click, type, visibility, text, and URL operations remain
+  centralized in `BasePage`.
+- Waits are bounded and produce useful timeout failures.
+- No page object introduces `Thread.sleep()` or an unbounded retry loop.
 
-**Changes**
-- New `TestLifecycleListener.java`
-- Log test start/end
-- Capture screenshot on failure
-- Register with JUnit 5
+### TASK-004: Add deterministic post-action waits to LoginPage (MUST FIX condition)
 
-**Acceptance**
-- Failing tests generate screenshots
-- Test execution logs are visible and useful
+**Priority:** Critical | **Complexity:** High | **Effort:** 20 minutes
+**Dependencies:** TASK-003 | **Blocks:** TASK-009, TASK-010, TASK-011, TASK-012, TASK-013
 
-### TASK-008 — Add centralized test data class
-**Priority:** Medium  
-**Depends on:** None  
-**Blocks:** Test cleanup and consistency
+**Deliverables**
 
-**Changes**
-- New `TestData.java`
-- Store shared constants for usernames, passwords, messages, and timeouts
+- Add outcome-specific waits for error banner, dashboard/logout, login-page
+  state, and lost-password/reset URL.
+- Make `submitLogin()` and `clickLostPassword()` usable without immediate,
+  race-prone reads.
+- Keep assertions in tests and business actions/state in the page object.
 
-**Acceptance**
-- Reusable constants replace scattered literals
-- Test maintenance is easier
+**Acceptance criteria**
 
-### TASK-009 — Verify valid login scenario
-**Priority:** Critical  
-**Depends on:** TASK-002, TASK-004, TASK-008  
-**Blocks:** Final validation
+- Invalid/blank submissions wait for an error or validation state.
+- Successful login waits for dashboard/logout state.
+- Reset-link test waits for the destination URL and does not rely on timing luck.
+- A failed wait remains bounded and is diagnosable.
 
-**Changes**
-- Review `LoginPageTests.java`
-- Confirm valid login test matches approved requirements
+### TASK-005: Correct shared Remember Me profile lifecycle (MUST FIX condition)
 
-**Acceptance**
-- Test passes with valid credentials
-- Assertions are stable and clear
+**Priority:** Critical | **Complexity:** High | **Effort:** 25 minutes
+**Dependencies:** TASK-002, TASK-003 | **Blocks:** TASK-011, TASK-013
 
-### TASK-010 — Verify invalid password scenario
-**Priority:** Critical  
-**Depends on:** TASK-002, TASK-004, TASK-008  
-**Blocks:** Final validation
+**Deliverables**
 
-**Changes**
-- Review invalid-password login test
-- Confirm error handling and assertion text
+- Create the temporary Chrome profile before the initial driver.
+- Pass the same profile to both the login driver and restarted driver.
+- Register the replacement driver and clean up the temporary profile after the
+  test, including failure/teardown paths.
+- Keep the Firefox skip explicit unless Firefox persistence is implemented.
 
-**Acceptance**
-- Test fails for wrong password as expected
-- Error message is asserted reliably
+**Acceptance criteria**
 
-### TASK-011 — Verify unknown user scenario
-**Priority:** Critical  
-**Depends on:** TASK-002, TASK-004, TASK-008  
-**Blocks:** Final validation
+- The initial and restarted Chrome drivers use the identical profile directory.
+- The test proves authentication persists after restart, not merely that the
+  second login page loads.
+- Profile directories are not left behind on successful or failed execution.
 
-**Changes**
-- Review unknown-user test
-- Confirm expected authentication failure behavior
+### TASK-006: Verify logging and lifecycle reporting
 
-**Acceptance**
-- Test passes against rejected/unknown credentials
-- Error state is verified consistently
+**Priority:** High | **Complexity:** Medium | **Effort:** 10 minutes
+**Dependencies:** TASK-002 | **Blocks:** TASK-007, TASK-013
 
-### TASK-012 — Verify blank-field validation
-**Priority:** High  
-**Depends on:** TASK-002, TASK-004, TASK-008  
-**Blocks:** Final validation
+**Deliverables**
 
-**Changes**
-- Review blank input validation test
-- Confirm UI validation message coverage
+- Verify `LogUtil` emits timestamped, non-secret lifecycle/step/result messages.
+- Verify `TestLifecycleListener` logs start, pass/fail, and completion and
+  preserves the original test failure.
+- Add any missing test-name or exception context without logging passwords.
 
-**Acceptance**
-- Test verifies required-field behavior
-- Assertions cover both username and password validation
+**Acceptance criteria**
 
-### TASK-013 — Run tests against the real application
-**Priority:** Critical  
-**Depends on:** TASK-009, TASK-010, TASK-011, TASK-012  
-**Blocks:** Completion
+- Console/Surefire output identifies each test and its result.
+- A listener failure cannot turn a passing test into a false failure or hide the
+  original exception.
+- No valid password is written by framework logging.
 
-**Changes**
-- Execute the full test suite against the live target application
-- Fix selectors/waits only if required
+### TASK-007: Verify failure screenshots and artifact policy
 
-**Acceptance**
-- Tests execute successfully against the application
-- Failures are actionable, not flaky
+**Priority:** High | **Complexity:** Medium | **Effort:** 10 minutes
+**Dependencies:** TASK-006 | **Blocks:** TASK-013, TASK-014
 
-### TASK-014 — Validate on slow network conditions
-**Priority:** Critical  
-**Depends on:** TASK-013  
-**Blocks:** Completion
+**Deliverables**
 
-**Changes**
-- Run tests under throttled network conditions
-- Confirm timeout settings and waits are sufficient
+- Verify `ScreenshotUtil` creates `target/screenshots` and sanitized,
+  timestamped PNG names.
+- Exercise a controlled failing test and confirm capture before teardown.
+- Document CI retention/redaction handling because screenshots may contain
+  account data; do not expose secrets in filenames or logs.
 
-**Acceptance**
-- Tests still pass or fail deterministically
-- No premature page-load failures occur
+**Acceptance criteria**
 
-## 5) Dependency Summary
+- A failing browser test produces one readable screenshot and retains the
+  original assertion failure.
+- A non-screenshot-capable driver or filesystem error is logged without masking
+  the test result.
+- Artifact retention and access expectations are documented.
+
+### TASK-008: Verify and extend centralized test data/config checks
+
+**Priority:** Medium | **Complexity:** Low | **Effort:** 10 minutes
+**Dependencies:** TASK-001 | **Blocks:** TASK-009, TASK-010, TASK-011, TASK-012
+
+**Deliverables**
+
+- Verify `TestData` owns shared message tokens and wait constants.
+- Add focused checks for configuration precedence and safe credential defaults.
+- Ensure synthetic unknown-user and invalid-password data remain deterministic.
+
+**Acceptance criteria**
+
+- Tests contain no hardcoded valid credentials.
+- Missing credentials cause visible skips for credential-dependent scenarios.
+- Configuration/helper checks pass without starting a browser.
+
+### TASK-009: Verify valid and invalid-password scenarios
+
+**Priority:** Critical | **Complexity:** Medium | **Effort:** 10 minutes
+**Dependencies:** TASK-004, TASK-008 | **Blocks:** TASK-013
+
+**Deliverables**
+
+- Verify `TS-LOG-001` with supplied non-production credentials.
+- Verify `TS-LOG-002` with a known username and wrong password.
+- Add explicit post-login dashboard/logout and failed-login-page assertions.
+
+**Acceptance criteria**
+
+- Valid login asserts authenticated state and dashboard/welcome evidence.
+- Invalid password asserts error feedback and remains on the login page.
+- Credential-dependent tests skip with a clear reason when credentials are absent.
+
+### TASK-010: Verify unknown-user and blank-field coverage
+
+**Priority:** High | **Complexity:** Medium | **Effort:** 15 minutes
+**Dependencies:** TASK-004, TASK-008 | **Blocks:** TASK-013
+
+**Deliverables**
+
+- Verify `TS-LOG-003` for an unregistered user and login-page retention.
+- Verify `TS-LOG-004` for both fields blank.
+- Add username-only and password-only cases if FR-02 is interpreted literally;
+  otherwise record the accepted scope in the test documentation.
+
+**Acceptance criteria**
+
+- Unknown-user feedback is asserted using tolerant tokens plus non-authenticated
+  page state.
+- Blank validation is deterministic and checks meaningful field/error feedback.
+- Any additional field-level cases have independent, readable assertions.
+
+### TASK-011: Verify Remember Me scenario
+
+**Priority:** High | **Complexity:** Medium | **Effort:** 10 minutes
+**Dependencies:** TASK-005, TASK-009 | **Blocks:** TASK-013
+
+**Deliverables**
+
+- Execute `TS-LOG-005` on Chrome with valid non-production credentials.
+- Verify checkbox selection, authenticated state, restart, and persisted session.
+- Record Firefox skip and rationale, or implement/document an approved exception.
+
+**Acceptance criteria**
+
+- The test passes only when the same-profile restart retains authentication.
+- Chrome/headless behavior is recorded.
+- A missing credential or unsupported browser is reported as an explicit skip.
+
+### TASK-012: Verify reset-link and required-control flows
+
+**Priority:** Medium | **Complexity:** Low | **Effort:** 5 minutes
+**Dependencies:** TASK-004 | **Blocks:** TASK-013
+
+**Deliverables**
+
+- Verify `TS-LOG-006` waits for and asserts the reset/lost-password URL.
+- Verify `AC-UI-001` controls and URL; add destination-page controls if required
+  by the accepted requirement interpretation.
+
+**Acceptance criteria**
+
+- Reset navigation is asserted after a bounded URL wait.
+- Username, password, Remember Me, login, and lost-password controls are found
+  through the page object and visibly asserted.
+
+### TASK-013: Execute live Chrome/Firefox integration baseline (MUST FIX condition)
+
+**Priority:** Critical | **Complexity:** High | **Effort:** 25 minutes
+**Dependencies:** TASK-001, TASK-002, TASK-004, TASK-005, TASK-006, TASK-007,
+TASK-009, TASK-010, TASK-011, TASK-012 | **Blocks:** TASK-014
+
+**Deliverables**
+
+- Run the suite against `https://askomdch.com/account/` in headed and/or
+  headless Chrome and Firefox.
+- Use a non-production account from CI/local secret storage; never commit or
+  print credentials.
+- Record browser/version/OS, pass/fail/skip results, timing, screenshots, and
+  live-site/network classifications.
+- Run `mvn dependency:tree` and the approved dependency/CVE scan, recording
+  findings separately from functional results.
+
+**Acceptance criteria**
+
+- Both required browser factories execute and results are documented.
+- All six `TS-LOG` scenarios and `AC-UI-001` are accounted for; credential
+  skips are not represented as successful credential coverage.
+- Failures are classified as product/test/environment issues with evidence.
+
+### TASK-014: Slow-network validation, CI/reporting, and documentation
+
+**Priority:** High | **Complexity:** Medium | **Effort:** 20 minutes
+**Dependencies:** TASK-013 | **Blocks:** None
+
+**Deliverables**
+
+- Run a bounded throttled-network test (for example, 3G/400 ms latency) and
+  record timeout/wait behavior.
+- Document browser/OS/version matrix, secret handling, screenshot retention,
+  skip policy, Maven commands, and dependency-scan results.
+- Define a credentialed CI smoke job/reporting expectation; defer parallelism
+  until driver/profile isolation is proven.
+
+**Acceptance criteria**
+
+- Slow-network tests complete deterministically or produce actionable bounded
+  failures; no broad retries are added.
+- `pageLoadTimeout` and explicit waits are demonstrably sufficient or have a
+  justified revised value.
+- Documentation enables another engineer to reproduce headed/headless and
+  credentialed/non-credentialed runs.
+
+## Dependency Graph
 
 ```text
-TASK-001 -> TASK-002
-TASK-003 -> TASK-004
-TASK-005 + TASK-006 -> TASK-007
-TASK-002 + TASK-004 + TASK-008 -> TASK-009/010/011/012
-TASK-009/010/011/012 -> TASK-013
-TASK-013 -> TASK-014
+TASK-001 ──> TASK-002 ───────────────┐
+    │            │                   │
+    └────────> TASK-008              │
+TASK-003 ──> TASK-004 ──> TASK-009 ──┤
+    │            │       TASK-010 ───┤
+    └────────> TASK-005 ─> TASK-011 ─┤
+                 │                   │
+TASK-006 ──> TASK-007 ───────────────┤
+TASK-004 ─────────────────> TASK-012 ┤
+                                    ▼
+                              TASK-013 ──> TASK-014
 ```
 
-## 6) Design Review Risk Controls
+There are no circular dependencies. Tasks 001/003/006/008 can begin in parallel;
+the execution order below is the recommended critical-path order.
 
-| Design Review Item | Control |
-|---|---|
-| Missing `pageLoadTimeout` | TASK-001, TASK-002 |
-| Missing `BasePage` abstraction | TASK-003, TASK-004 |
-| Weak logging strategy | TASK-005, TASK-007 |
-| No screenshot on failure | TASK-006, TASK-007 |
-| Flaky real-world execution | TASK-013 |
-| Slow network instability | TASK-014 |
+## Phased Execution Order
 
-## 7) Testing and Verification Tasks
+1. **Foundation:** TASK-001, TASK-002.
+2. **Framework synchronization and state isolation:** TASK-003, TASK-004,
+   TASK-005.
+3. **Diagnostics:** TASK-006, TASK-007.
+4. **Data/config verification:** TASK-008.
+5. **Scenario verification:** TASK-009, TASK-010, TASK-011, TASK-012.
+6. **Integration and resilience:** TASK-013, TASK-014.
 
-- Run unit-level verification for `TestConfig` timeout handling.
-- Run page-object smoke checks for `LoginPage`.
-- Execute `LoginPageTests` locally in headed and headless modes.
-- Validate artifact creation for screenshots on failure.
-- Verify CI-friendly console logs.
-- Confirm behavior against the live application.
-- Confirm stability under network throttling.
+## Design-Review Condition Mapping
 
-## 8) Definition of Done
+| Condition/recommendation | Task(s) | Coverage |
+|---|---|---|
+| Configurable positive `pageLoadTimeout` | TASK-001, TASK-002 | MUST FIX |
+| Shared Remember Me profile | TASK-005, TASK-011 | MUST FIX |
+| Deterministic post-submit/reset waits | TASK-003, TASK-004 | MUST FIX |
+| Live application plus Chrome/Firefox execution | TASK-013 | MUST FIX |
+| Failed-login page state and blank-field breadth | TASK-009, TASK-010 | Should fix |
+| Standardize implicit/page waits | TASK-001, TASK-002, TASK-003 | Should fix |
+| Browser/version and configuration validation | TASK-001, TASK-002, TASK-013, TASK-014 | Should fix |
+| Logging and screenshot diagnostics | TASK-006, TASK-007 | Should fix |
+| Secret/artifact policy and visible skips | TASK-007, TASK-008, TASK-013, TASK-014 | Should fix |
+| Unit utility/config checks and dependency scan | TASK-008, TASK-013 | Should fix |
+| Slow-network evidence | TASK-014 | MUST FIX |
 
-The implementation is complete when:
+## Risk Mitigation
 
-- `pageLoadTimeout` is configurable and used by `BaseTest`.
-- `BasePage` exists and `LoginPage` extends it.
-- Logging utility and failure screenshot capture are implemented.
-- Existing login tests are aligned with the approved requirements.
-- Test data is centralized.
-- The full suite passes against the real application.
-- Slow-network execution has been validated.
-- No design review blockers remain open.
-- `docs/sdlc/impl-plan.md` is committed and current.
+| Risk | Mitigation task(s) | Evidence |
+|---|---|---|
+| Remember Me uses a different profile | TASK-005, TASK-011 | Same profile path and restart assertion |
+| UI outcome is read before it updates | TASK-003, TASK-004 | Outcome-specific bounded waits |
+| Live site/network changes | TASK-001, TASK-013, TASK-014 | Classified failures and diagnostics |
+| Secrets in logs/screenshots/process history | TASK-006, TASK-007, TASK-013, TASK-014 | Redaction/retention policy and CI secret store |
+| Chrome/Firefox differences | TASK-002, TASK-011, TASK-013 | Browser matrix and explicit Firefox scope |
+| Skips conceal missing credential coverage | TASK-008, TASK-013, TASK-014 | Separate credentialed job and visible skip report |
+| Wait-policy latency/flakiness | TASK-002, TASK-003, TASK-014 | One documented wait policy and timing baseline |
+| Dependency vulnerability | TASK-013, TASK-014 | Dependency tree and approved SCA result |
 
-## 9) Execution Note
+## Success Criteria
 
-The current repository already contains the base Selenium Java tests.  
-The work is primarily framework hardening and validation, not greenfield implementation.
+- All architecture components are verified or have a named improvement task.
+- Three must-fix review conditions are implemented and evidenced: shared
+  Remember Me profile, outcome-specific waits, and live Chrome/Firefox runs.
+- `pageLoadTimeout` is positive, configurable, and applied by `BaseTest`.
+- The POM remains responsible for actions/state while tests retain assertions.
+- Valid, invalid, unknown-user, blank, Remember Me, reset-link, and UI scenarios
+  have measurable coverage; credential skips remain visible.
+- Failure logs/screenshots are useful without exposing passwords.
+- Slow-network, browser matrix, dependency, CI, and artifact policies are
+  documented and reproducible.
+- No circular task dependencies exist, and all acceptance criteria can be
+  verified from code, test output, or recorded execution evidence.
+
+## Traceability
+
+- **Architecture:** `docs/sdlc/architecture.md`
+- **Design review:** `docs/sdlc/design-review.md`
+- **Requirements:** `docs/sdlc/requirements.md`
+- **Existing code reviewed:** `src/test/java/Github_Copilot/base/BaseTest.java`,
+  `config/TestConfig.java`, `pages/BasePage.java`, `pages/LoginPage.java`,
+  `tests/LoginPageTests.java`, `data/TestData.java`,
+  `listeners/TestLifecycleListener.java`, `utils/LogUtil.java`,
+  `utils/ScreenshotUtil.java`
+- **Build/reporting:** `pom.xml` (Java 21, Selenium 4.25.0, JUnit Jupiter 5.11.3,
+  Surefire 3.5.0)
+- **Next stage:** Stage 5 implementation and recorded validation
+- **Planned commit message:** `[Planning] Create Selenium test framework implementation plan`

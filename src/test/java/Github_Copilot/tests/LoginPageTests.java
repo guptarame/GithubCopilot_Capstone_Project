@@ -10,7 +10,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -61,6 +60,7 @@ class LoginPageTests extends BaseTest {
 
         assertTrue(containsAny(message, TestData.ERROR_MESSAGE_TOKENS),
                 "Expected an incorrect-password style error message.");
+        assertTrue(loginPage.isLoginFormVisible(), "Invalid login should remain on the login page.");
     }
 
     @Test
@@ -77,6 +77,7 @@ class LoginPageTests extends BaseTest {
 
         assertTrue(containsAny(message, List.of("unknown", "invalid", "error", "not")),
                 "Expected unknown-user style error message.");
+        assertTrue(loginPage.isLoginFormVisible(), "Unknown-user login should remain on the login page.");
     }
 
     @Test
@@ -103,7 +104,8 @@ class LoginPageTests extends BaseTest {
         Assumptions.assumeTrue(!TestConfig.validUsername().isBlank() && !TestConfig.validPassword().isBlank(),
                 "Skipping remember-me persistence test because credentials were not provided.");
 
-        Path profileDir = Files.createTempDirectory("remember-me-profile");
+        Path profileDir = getChromeProfileDir();
+        Assumptions.assumeTrue(profileDir != null, "Remember-me profile was not initialized.");
 
         LoginPage loginPage = new LoginPage(driver).openPage(TestConfig.baseUrl());
         loginPage.setRememberMe(true);
@@ -156,4 +158,3 @@ class LoginPageTests extends BaseTest {
         return tokens.stream().anyMatch(text::contains);
     }
 }
-

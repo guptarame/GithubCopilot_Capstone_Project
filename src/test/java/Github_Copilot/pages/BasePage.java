@@ -1,5 +1,6 @@
 package Github_Copilot.pages;
 
+import Github_Copilot.data.TestData;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -16,7 +17,7 @@ public abstract class BasePage {
 
     protected BasePage(WebDriver driver) {
         this.driver = driver;
-        this.wait = new WebDriverWait(driver, Duration.ofSeconds(12));
+        this.wait = new WebDriverWait(driver, Duration.ofSeconds(TestData.DEFAULT_WAIT_TIMEOUT_SECONDS));
     }
 
     protected void navigateTo(String url) {
@@ -42,7 +43,11 @@ public abstract class BasePage {
     }
 
     protected boolean isVisible(By locator) {
-        return !driver.findElements(locator).isEmpty() && driver.findElement(locator).isDisplayed();
+        try {
+            return driver.findElements(locator).stream().anyMatch(WebElement::isDisplayed);
+        } catch (RuntimeException ignored) {
+            return false;
+        }
     }
 
     protected String textOf(By locator) {
@@ -65,6 +70,10 @@ public abstract class BasePage {
     protected String currentUrl() {
         return driver.getCurrentUrl();
     }
-}
 
+    protected void waitForUrlContaining(String... urlParts) {
+        wait.until(webDriver -> Arrays.stream(urlParts)
+                .anyMatch(part -> webDriver.getCurrentUrl().contains(part)));
+    }
+}
 

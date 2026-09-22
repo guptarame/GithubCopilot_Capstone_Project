@@ -20,9 +20,11 @@ public final class TestConfig {
     }
 
     public static int pageLoadTimeout() {
-        String value = fromSystemOrEnv("pageLoadTimeout", "PAGE_LOAD_TIMEOUT", String.valueOf(TestData.DEFAULT_PAGE_LOAD_TIMEOUT_SECONDS));
+        String value = fromSystemOrEnv("pageLoadTimeout", "PAGE_LOAD_TIMEOUT_SECONDS",
+                String.valueOf(TestData.DEFAULT_PAGE_LOAD_TIMEOUT_SECONDS));
         try {
-            return Integer.parseInt(value.trim());
+            int timeout = Integer.parseInt(value.trim());
+            return timeout > 0 ? timeout : TestData.DEFAULT_PAGE_LOAD_TIMEOUT_SECONDS;
         } catch (NumberFormatException ignored) {
             return TestData.DEFAULT_PAGE_LOAD_TIMEOUT_SECONDS;
         }
@@ -58,4 +60,3 @@ public final class TestConfig {
         return defaultValue;
     }
 }
-

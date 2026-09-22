@@ -30,8 +30,14 @@ public final class LogUtil {
         log("ERROR", message);
     }
 
+    public static void error(String message, Throwable throwable) {
+        String detail = throwable == null
+                ? "unknown error"
+                : throwable.getClass().getSimpleName() + ": " + throwable.getMessage();
+        log("ERROR", message + " [" + detail + "]");
+    }
+
     private static void log(String level, String message) {
         System.out.printf("[%s] [%s] %s%n", LocalDateTime.now().format(FORMATTER), level, message);
     }
 }
-

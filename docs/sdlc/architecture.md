@@ -1,279 +1,191 @@
 # Selenium Test Automation Framework Architecture
 
 **Project:** Selenium Login Automation Capstone  
-**Feature:** US-AUTH-002 — Login & Authentication  
-**Stack:** Java 21, Maven, JUnit 5, Selenium 4, WebDriverManager  
-**Existing Codebase:** `BaseTest`, `TestConfig`, `LoginPage`, `LoginPageTests`  
-**Date:** 2026-09-21
+**Feature:** US-AUTH-002 — Customer Login & Authentication
+**Based on:** `docs/sdlc/requirements.md`, existing test implementation
+**Date:** 2026-09-22
+**Agent:** architecture-agent
 
-## 1. Objective and Scope
+## Architecture Overview
 
-The goal is to keep the current Selenium framework practical, stable, and easy to extend for login-related testing. The architecture should support positive and negative authentication scenarios, work across supported browsers, and remain compatible with the existing Maven/JUnit structure.
+The project uses a small JUnit 5/Selenium 4 framework organized around a per-test
+WebDriver lifecycle and Page Object Model (POM). Tests express authentication
+intent through `LoginPage`; configuration, waits, diagnostics, and test data
+remain centralized so the six login scenarios can run independently on Chrome or
+Firefox. Maven Surefire is the baseline reporting mechanism, with screenshots
+captured for failures.
 
-**In scope**
-- Login page validation for valid and invalid credentials
-- Reusable browser setup and teardown
-- Config-driven execution for local and CI runs
-- Maintainable page objects and assertions
-- Basic reporting and failure diagnostics
+## System Components
 
-**Out of scope**
-- Full framework rewrite
-- Remote grid/cloud execution
-- Advanced BDD layer
-- Heavy custom reporting stack
+| Component | Responsibility | Inputs / outputs | Key classes and dependencies |
+| --- | --- | --- | --- |
+| **Driver and test lifecycle** | Create the configured browser before each test, apply timeouts, and quit it afterward. Keep tests isolated and sequential. | Browser/headless settings → `WebDriver` available to the test | `base.BaseTest`; Selenium 4, WebDriverManager, JUnit 5 |
+| **Page objects and synchronization** | Own locators and business actions; wait for visible/clickable elements instead of sleeping. | Driver and page URL → login actions, page state, messages | `pages.BasePage`, `pages.LoginPage`; Selenium `WebDriverWait` |
+| **Configuration and test data** | Resolve runtime settings and credentials without putting secrets in source control; centralize deterministic negative data and message tokens. | System properties or environment variables → typed settings/test values | `config.TestConfig`, `data.TestData`; Java standard library |
+| **Scenario tests** | Map each requirement to an independent, readable test and make assertions about UI, URL, authentication, and feedback. Skip credential-dependent tests when credentials are absent. | Configured driver, page objects, test data → JUnit pass/fail/skip | `tests.LoginPageTests`; JUnit 5 assertions and assumptions |
+| **Diagnostics and reporting** | Log lifecycle events and capture a timestamped screenshot after a failed test; preserve the original failure. | JUnit extension context and current driver → console logs and `target/screenshots/*.png` | `listeners.TestLifecycleListener`, `utils.LogUtil`, `utils.ScreenshotUtil`; JUnit extension API |
 
-## 2. Proposed Framework Layers / Components
+### Component contracts
 
-### 2.1 Base Test Layer
-**Responsibility:** Manage WebDriver lifecycle, browser options, and test-level setup/cleanup.
+- `BaseTest.setupDriver()` calls `createDriver(browser, headless)`, applies the
+  one-second implicit wait and 30-second (configurable) page-load timeout, and
+  registers the driver with the lifecycle extension.
+- `BasePage` exposes common navigation, visibility, click, typing, URL, and
+  explicit-wait behavior. `LoginPage` contains stable locators (`id`,
+  `name`, and targeted CSS/link text) and methods such as
+  `openPage`, `submitLogin`, `isLoggedIn`, `getFeedbackMessage`,
+  `setRememberMe`, and `clickLostPassword`.
+- `TestConfig` currently resolves **system property → environment variable →
+  default**. No properties file is required for the current implementation.
+- `TestLifecycleListener` runs through `@ExtendWith` on `BaseTest`, so a failure
+  is logged and screenshotted before `@AfterEach` closes the browser.
 
-**Current fit:** `BaseTest`  
-**Recommended behavior:**
-- Create driver in `@BeforeEach`
-- Quit driver in `@AfterEach`
-- Centralize browser selection and common timeouts
-- Avoid shared state between tests
+## Directory Structure
 
-**Dependencies:** Selenium WebDriver, WebDriverManager, JUnit 5
+```text
+src/test/java/Github_Copilot/
+├── base/       BaseTest.java
+├── config/     TestConfig.java
+├── data/       TestData.java
+├── listeners/  TestLifecycleListener.java
+├── pages/      BasePage.java, LoginPage.java
+├── tests/      LoginPageTests.java
+└── utils/      LogUtil.java, ScreenshotUtil.java
+docs/sdlc/requirements.md
+pom.xml
+```
 
-### 2.2 Page Object Layer
-**Responsibility:** Encapsulate page locators and user actions.
+No additional framework layer is required for the current scope. A new page
+object should be added under `pages` only when a scenario crosses a distinct
+page boundary (for example, a future reset-password flow).
 
-**Current fit:** `LoginPage`  
-**Recommended behavior:**
-- Keep UI locators private to the page class
-- Expose business methods such as `open()`, `login(username, password)`, `getErrorMessage()`, and `isLoaded()`
-- Return page objects or self for fluent usage where useful
+## Requirements and Scenario Coverage
 
-**Dependencies:** WebDriver, WebDriverWait
+| Requirement / scenario | Architectural coverage |
+| --- | --- |
+| FR-01 / AC-1: form and required controls | `LoginPage` stable locators and `AC-UI-001` visibility assertions |
+| FR-02 / AC-2: blank-field validation | `TS-LOG-004`; feedback read through `LoginPage.getFeedbackMessage()` |
+| FR-03 / AC-3: successful authentication and dashboard | `TS-LOG-001`; `isLoggedIn`, dashboard text, welcome/logout tokens |
+| FR-04 / AC-4: invalid password/unknown user remain on login | `TS-LOG-002` and `TS-LOG-003`; error-banner feedback assertions |
+| FR-05 / AC-5: Remember me persistence | `TS-LOG-005`; Chrome persistent profile, restart, and dashboard check |
+| FR-06 / AC-6: password recovery navigation | `TS-LOG-006`; link action and `lost-password`/`reset` URL assertion |
+| NFR-01 security | HTTPS default URL; valid credentials only from environment/system properties; no password logging |
+| NFR-02 reliability | Fresh browser per test, explicit waits, deterministic test data, no test ordering |
+| NFR-03 compatibility | Driver factory supports Chrome and Firefox; headless mode is configurable |
+| NFR-04 maintainability | POM and stable `id`/`name` locators isolate DOM changes |
+| NFR-05 observability | Business assertions, lifecycle logs, Surefire XML, and failure screenshots |
 
-### 2.3 Configuration Layer
-**Responsibility:** Resolve runtime settings and test credentials from properties/env/system values.
+The valid-login and invalid-password scenarios are skipped with a clear reason
+when required valid credentials are not supplied. The unknown-user, blank-field,
+UI, and reset-link scenarios do not require a real account.
 
-**Current fit:** `TestConfig`  
-**Recommended behavior:**
-- Resolve values in this order: system properties, environment variables, defaults
-- Keep sensitive values out of source control
-- Provide safe defaults for local execution
+## Configuration and Data Flow
 
-**Suggested config keys**
-- `baseUrl`
-- `browser`
-- `headless`
-- `validUsername`
-- `validPassword`
-- `invalidPassword`
-- `unknownUsername`
+```text
+mvn test / -D overrides
+          │
+          ▼
+TestConfig: system property → environment variable → safe default
+          │
+          ├── browser, headless, baseUrl, pageLoadTimeout
+          └── valid/invalid/unknown login data
+          │
+          ▼
+BaseTest → WebDriverFactory logic → ChromeDriver or FirefoxDriver
+          │
+          ▼
+LoginPage (explicit waits + locators) → JUnit assertions
+          │                                      │
+          └── failure → listener → log + target/screenshots ──┐
+                                                               ▼
+                                             Surefire XML in target/surefire-reports
+```
 
-### 2.4 Test Layer
-**Responsibility:** Hold scenario-focused tests with clear assertions.
+Supported examples:
 
-**Current fit:** `LoginPageTests`  
-**Recommended behavior:**
-- One scenario per test method
-- Use Arrange-Act-Assert style
-- Keep test methods readable and short
-- Prefer descriptive method names and `@DisplayName`
+```powershell
+mvn test
+mvn test -Dbrowser=firefox -Dheadless=true
+mvn test -DbaseUrl=https://askomdch.com/account/
+```
 
-### 2.5 Utility Layer
-**Responsibility:** Provide shared helpers only where repetition exists.
+For a successful login, provide `LOGIN_VALID_USERNAME` and
+`LOGIN_VALID_PASSWORD` (or the corresponding `-DvalidUsername` and
+`-DvalidPassword` values). Optional values are `LOGIN_INVALID_PASSWORD` and
+`LOGIN_UNKNOWN_USERNAME`. Credentials must be supplied by the local shell or
+CI secret store and must not be committed or included in logs.
 
-**Recommended utilities**
-- Wait helper for explicit waits
-- Screenshot helper for failures
-- Small assertion helper only if repeated logic appears
+## Test Execution Flow
 
-**Rule:** Do not add utilities unless the same logic appears in multiple places.
+```text
+Maven Surefire discovers **/*Tests.java
+  → JUnit creates LoginPageTests instance
+  → TestLifecycleListener logs start
+  → BaseTest @BeforeEach creates/configures driver
+  → Test opens account URL through LoginPage
+  → Page object performs actions using explicit waits
+  → Test asserts expected form, URL, success, validation, or error state
+  → On failure: listener logs and captures screenshot
+  → BaseTest @AfterEach quits driver
+  → Surefire writes XML reports and Maven returns pass/fail status
+```
 
-### 2.6 Reporting / Listener Layer
-**Responsibility:** Capture failures and support diagnostics.
+Each test receives a new browser. The Remember me test is intentionally
+Chrome-specific: it uses a temporary persistent profile, authenticates, quits,
+reopens with that profile, and verifies the dashboard. It is skipped on Firefox
+or without valid credentials rather than weakening the other scenarios.
 
-**Recommended approach**
-- Use JUnit 5 extensions only if needed
-- Keep initial setup simple
-- Capture screenshots on failure if test instability appears
-- Rely on Surefire reports for baseline reporting
+## Technology Decisions
 
-## 3. Page Object and Configuration Strategy
+| Concern | Choice | Rationale |
+| --- | --- | --- |
+| Language | Java 21 | Matches `pom.xml`, strong typing, modern LTS runtime |
+| Browser automation | Selenium 4.25.0 | Cross-browser WebDriver API and explicit waits |
+| Driver management | WebDriverManager 6.1.0 | Removes manual driver binary setup |
+| Test framework | JUnit Jupiter 5.11.3 | Lifecycle, assumptions, extensions, and readable tests |
+| Build/discovery | Maven 3.9+ and Surefire 3.5.0 | Reproducible dependency/test execution and XML reports |
+| Assertions | JUnit 5 native assertions | Already used; sufficient for current scenarios |
 
-### Page Object Strategy
-The login page should remain the primary abstraction for UI interaction. Locators should stay in `LoginPage`, not in test classes.
+The existing one-second implicit wait is retained for compatibility, but state
+changes and post-submit outcomes must use `WebDriverWait` in page objects.
+`Thread.sleep()` and broad retry loops are not part of the design.
 
-**Recommended page object methods**
-- `open()`
-- `enterUsername(String username)`
-- `enterPassword(String password)`
-- `submit()`
-- `getFeedbackMessage()`
-- `isLoginFormVisible()`
+## Error Handling and Reliability
 
-This keeps the test code focused on intent rather than DOM details.
+- Unsupported browsers fail immediately with `IllegalArgumentException`.
+- Missing credential inputs use JUnit assumptions for credential-dependent
+  scenarios; this is reported as skipped, not as a false pass.
+- Element and navigation timing issues fail through explicit wait timeouts with
+  the test name and screenshot available for diagnosis.
+- Unexpected WebDriver/test exceptions are not swallowed. Teardown attempts to
+  quit the driver, while the listener preserves the failure result.
+- Feedback assertions should use meaningful token sets because the live site's
+  theme/plugin wording may vary slightly; they must still assert the correct
+  page state and outcome.
+- Tests run sequentially in the initial design. Parallel execution is deferred
+  until driver isolation, profile handling, and CI capacity are verified.
 
-### Configuration Strategy
-`TestConfig` should remain the single source of truth for execution settings and credentials.
+## Security and Operational Constraints
 
-**Credential strategy**
-- Use real valid credentials only through environment variables
-- Keep invalid credentials deterministic and non-sensitive
-- Avoid hardcoding secrets in tests or properties files
+- The default and documented target URL use HTTPS; non-production URLs must be
+  explicitly supplied.
+- Never hardcode or print valid passwords. Avoid putting credentials in
+  screenshots or command history; use CI secret variables where possible.
+- Screenshots are diagnostic artifacts under `target` and should be retained
+  only according to CI policy.
+- Execution depends on network access to the live application and installed
+  Chrome/Firefox binaries. Live-site changes can affect selectors and wording.
 
-**Example**
-- Valid login: env-provided username/password
-- Invalid login: valid username + known bad password
-- Unknown user: clearly fake email + any password
+## Success Criteria and Traceability
 
-## 4. Locator Strategy and Synchronization Approach
+The implementation is ready for review when all six `TS-LOG` scenarios and the
+required-control acceptance check map to the components above, tests are
+independent, Chrome and Firefox startup are configurable, and failed tests
+produce actionable logs/screenshots without exposing secrets. This document is
+traceable to `requirements.md`, `pom.xml`, and the current
+`BaseTest`, `TestConfig`, `BasePage`, `LoginPage`, `LoginPageTests`,
+`TestLifecycleListener`, `LogUtil`, and `ScreenshotUtil` implementations.
 
-### Locator Strategy
-Prefer stable locators in this order:
-1. `id`
-2. `name`
-3. `cssSelector`
-4. `xpath` only when necessary
-
-**Guidelines**
-- Avoid brittle absolute XPath
-- Use page-specific locators
-- Prefer semantic locators tied to labels, ids, or stable attributes
-
-### Synchronization Strategy
-Use explicit waits for UI state changes.
-
-**Recommended**
-- `WebDriverWait` for element visibility/clickability
-- Wait for feedback message after submit
-- Avoid `Thread.sleep()`
-- Keep implicit wait minimal or avoid mixing with heavy explicit waits
-
-**Synchronization targets**
-- Login form ready
-- Submit button clickable
-- Validation/error message visible
-- Successful navigation or post-login state ready
-
-## 5. Data / Configuration Strategy
-
-### Valid Credentials
-- Supplied externally via environment variables
-- Example:
-  - `LOGIN_VALID_USERNAME`
-  - `LOGIN_VALID_PASSWORD`
-
-### Invalid Credentials
-- Can be hardcoded or centrally defined
-- Examples:
-  - invalid password
-  - unknown username
-  - blank values for field validation
-
-### Recommended test data grouping
-- `positive` login data
-- `negative` login data
-- `validation` data for empty fields or malformed inputs
-
-### Storage guidance
-- Keep lightweight data in `TestConfig`
-- Add test data classes only if scenarios expand
-- Avoid spreadsheet or complex data frameworks at this stage
-
-## 6. Test Case Grouping / Tagging Recommendations
-
-Use JUnit 5 tags to support selective execution.
-
-**Recommended tags**
-- `smoke` — core login success path
-- `negative` — invalid credential scenarios
-- `regression` — complete login coverage
-- `auth` — authentication-related suite grouping
-
-**Suggested usage**
-- Smoke: valid login only
-- Regression: valid + invalid + boundary cases
-- Negative: only failure scenarios
-
-This allows CI and local execution to target the right scope without changing code.
-
-## 7. Error Handling / Assertion Strategy
-
-### Error Handling
-- Let unexpected failures fail fast
-- Catch exceptions only when adding value to diagnostics
-- Capture screenshots on failure if needed
-- Re-throw after logging so test results remain accurate
-
-### Assertion Strategy
-- Use JUnit 5 assertions as the default
-- Keep assertions close to the business outcome
-- Prefer one main assertion per scenario where possible
-- Include meaningful failure messages
-
-**Examples**
-- Verify success message or logout state after valid login
-- Verify error message for invalid credentials
-- Verify field validation for blank submission
-
-## 8. CI / Execution Considerations
-
-### Local Execution
-- Default browser: Chrome
-- Allow browser override via system property
-- Support headless mode for quick validation
-
-### CI Execution
-- Run headless by default
-- Use environment variables for credentials
-- Keep execution deterministic and isolated
-- Publish Surefire reports as build artifacts
-
-### Maven execution examples
-- `mvn test`
-- `mvn test -Dbrowser=firefox`
-- `mvn test -Dheadless=true`
-
-### Reliability considerations
-- Use fixed, explicit waits
-- Keep tests independent
-- Avoid order dependency
-- Limit retries unless flakiness is proven
-
-## 9. Risks and Mitigations
-
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| Flaky UI timing | Test instability | Use explicit waits and stable locators |
-| Hardcoded credentials | Security and maintenance issue | Use env vars for valid credentials |
-| Brittle locators | Frequent failures | Prefer id/name/css over XPath |
-| Shared test state | Order-dependent failures | Reinitialize browser per test |
-| Over-engineering | Slower delivery | Keep current layered design small |
-| CI environment differences | Browser inconsistencies | Use headless-safe options and consistent timeouts |
-
-## 10. Short Implementation Roadmap
-
-### Phase 1: Stabilize Existing Structure
-- Keep `BaseTest`, `TestConfig`, `LoginPage`, `LoginPageTests`
-- Confirm setup/teardown is consistent
-- Standardize waits and browser options
-
-### Phase 2: Improve Page Object Quality
-- Refine `LoginPage` locators
-- Add explicit wait-based page methods
-- Ensure tests use only page methods, not raw WebDriver calls
-
-### Phase 3: Strengthen Configuration
-- Finalize system property and environment variable precedence
-- Document required credentials and browser options
-- Add safe defaults for local runs
-
-### Phase 4: Organize Test Execution
-- Add JUnit 5 tags
-- Group smoke and negative login tests
-- Update Maven Surefire configuration if needed
-
-### Phase 5: Add Diagnostics
-- Add screenshot capture on failure if the suite grows
-- Keep reporting simple and Maven-native
-
-## 11. Summary
-
-This architecture keeps the current project structure intact while making it more maintainable and CI-friendly. It relies on the existing `BaseTest`, `TestConfig`, `LoginPage`, and `LoginPageTests` classes, adds only minimal supporting structure, and uses standard Selenium/JUnit/Maven patterns for reliable login automation.
+**Next stage:** design review, followed by implementation planning and
+verification.
+**Suggested commit message:** `[Architecture] Propose Selenium test automation architecture`

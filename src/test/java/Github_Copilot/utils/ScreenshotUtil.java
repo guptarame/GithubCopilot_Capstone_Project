@@ -1,6 +1,7 @@
 package Github_Copilot.utils;
 
 import org.openqa.selenium.OutputType;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
 
@@ -26,6 +27,7 @@ public final class ScreenshotUtil {
         }
 
         try {
+            redactSensitiveFields(driver);
             Path directory = Paths.get("target", "screenshots");
             Files.createDirectories(directory);
 
@@ -38,6 +40,31 @@ public final class ScreenshotUtil {
         } catch (IOException | RuntimeException ex) {
             LogUtil.error("Unable to capture screenshot", ex);
             return null;
+        } finally {
+            restoreSensitiveFields(driver);
+        }
+    }
+
+    private static void redactSensitiveFields(WebDriver driver) {
+        if (driver instanceof JavascriptExecutor javascriptExecutor) {
+            javascriptExecutor.executeScript("""
+                    document.querySelectorAll('input[type="password"], input[type="email"], input[name*="user"], input[id*="user"], input[name*="email"], input[id*="email"]')
+                        .forEach(function (element) {
+                            element.dataset.screenshotRedacted = element.value;
+                            element.value = '[REDACTED]';
+                        });
+                    """);
+        }
+    }
+
+    private static void restoreSensitiveFields(WebDriver driver) {
+        if (driver instanceof JavascriptExecutor javascriptExecutor) {
+            javascriptExecutor.executeScript("""
+                    document.querySelectorAll('[data-screenshot-redacted]').forEach(function (element) {
+                        element.value = element.dataset.screenshotRedacted;
+                        delete element.dataset.screenshotRedacted;
+                    });
+                    """);
         }
     }
 

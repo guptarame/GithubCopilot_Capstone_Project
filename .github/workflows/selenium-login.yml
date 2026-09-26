@@ -1,0 +1,56 @@
+name: Selenium login tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  login-tests:
+    name: Login tests (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        browser: [chrome, firefox]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Run Selenium login suite
+        env:
+          LOGIN_VALID_USERNAME: ${{ secrets.LOGIN_VALID_USERNAME }}
+          LOGIN_VALID_PASSWORD: ${{ secrets.LOGIN_VALID_PASSWORD }}
+        run: >
+          mvn --batch-mode test
+          -Dbrowser=${{ matrix.browser }}
+          -Dheadless=true
+          -DrequireCredentialTests=true
+          -DallowFailureScreenshots=true
+
+      - name: Upload Surefire reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-${{ matrix.browser }}
+          path: target/surefire-reports/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload redacted failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-${{ matrix.browser }}
+          path: target/screenshots/
+          if-no-files-found: ignore
+          retention-days: 3

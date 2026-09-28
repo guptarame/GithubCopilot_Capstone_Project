@@ -1,7 +1,11 @@
 package Github_Copilot.pages;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+
+import java.net.URI;
 
 public class LoginPage extends BasePage {
 
@@ -11,7 +15,7 @@ public class LoginPage extends BasePage {
     private final By loginButton = By.name("login");
     private final By lostPasswordLink = By.linkText("Lost your password?");
     private final By dashboardContent = By.cssSelector("div.woocommerce-MyAccount-content");
-    private final By errorBanner = By.cssSelector("ul.woocommerce-error, div.woocommerce-notices-wrapper");
+    private final By errorBanner = By.cssSelector("ul.woocommerce-error, div.woocommerce-notices-wrapper .woocommerce-error");
     private final By logoutLink = By.linkText("Log out");
 
     public LoginPage(WebDriver driver) {
@@ -53,6 +57,10 @@ public class LoginPage extends BasePage {
         return isUsernameVisible() && isPasswordVisible() && isLoginButtonVisible();
     }
 
+    public boolean isUnauthenticated() {
+        return !isLoggedIn();
+    }
+
     public LoginPage enterUsername(String value) {
         type(usernameField, value);
         return this;
@@ -84,8 +92,9 @@ public class LoginPage extends BasePage {
     }
 
     public String getFeedbackMessage() {
-        if (anyVisible(errorBanner)) {
-            return textOfFirstVisible(errorBanner);
+        String error = textOfFirstVisible(errorBanner);
+        if (!error.isBlank()) {
+            return error;
         }
 
         if (anyVisible(dashboardContent)) {
@@ -104,6 +113,14 @@ public class LoginPage extends BasePage {
         return !usernameValidation.isBlank() ? usernameValidation : validationMessage(passwordField);
     }
 
+    public String getUsernameValidationMessage() {
+        return validationMessage(usernameField);
+    }
+
+    public String getPasswordValidationMessage() {
+        return validationMessage(passwordField);
+    }
+
     public boolean isLoggedIn() {
         String dashboardText = anyVisible(dashboardContent) ? textOf(dashboardContent) : "";
         String lowerText = dashboardText.toLowerCase();
@@ -115,28 +132,57 @@ public class LoginPage extends BasePage {
     }
 
     public LoginPage waitForDashboard() {
-        wait.until(webDriver -> isLoggedIn());
+        waitForCondition(webDriver -> isLoggedIn());
+        return this;
+    }
+
+    public LoginPage waitForLoginForm() {
+        waitForCondition(webDriver -> isLoginFormVisible());
         return this;
     }
 
     public void clickLostPassword() {
         click(lostPasswordLink);
-        waitForUrlContaining("lost-password", "reset");
+        waitForCondition(webDriver -> isPasswordRecoveryUrl(webDriver.getCurrentUrl()));
     }
 
     private void waitForSubmissionOutcome() {
-        wait.until(webDriver -> anyVisible(errorBanner)
-                || anyVisible(dashboardContent)
+        wait.until(ExpectedConditions.refreshed(webDriver -> anyVisible(dashboardContent)
                 || anyVisible(logoutLink)
-                || hasNativeValidationMessage());
+                || hasScopedError()
+                || hasNativeValidationMessage()));
+    }
+
+    private boolean hasScopedError() {
+        return !textOfFirstVisible(errorBanner).isBlank();
+    }
+
+    private boolean isPasswordRecoveryUrl(String url) {
+        try {
+            String path = URI.create(url).getPath().toLowerCase();
+            return path.matches(".*/(lost-password|reset-password)(/.*)?");
+        } catch (IllegalArgumentException ignored) {
+            return false;
+        }
     }
 
     private boolean hasNativeValidationMessage() {
+        triggerNativeValidation(usernameField);
+        triggerNativeValidation(passwordField);
         return !getValidationMessage().isBlank();
     }
 
     private String validationMessage(By locator) {
         String validationMessage = driver.findElement(locator).getAttribute("validationMessage");
-        return validationMessage == null ? "" : validationMessage;
+        if (validationMessage != null && !validationMessage.isBlank()) {
+            return validationMessage;
+        }
+        return hasScopedError() ? textOfFirstVisible(errorBanner) : "";
+    }
+
+    private void triggerNativeValidation(By locator) {
+        if (driver instanceof JavascriptExecutor javascriptExecutor) {
+            javascriptExecutor.executeScript("arguments[0].reportValidity();", driver.findElement(locator));
+        }
     }
 }

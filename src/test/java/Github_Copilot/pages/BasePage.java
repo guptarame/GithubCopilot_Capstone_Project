@@ -2,8 +2,10 @@ package Github_Copilot.pages;
 
 import Github_Copilot.data.TestData;
 import org.openqa.selenium.By;
+import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -45,7 +47,7 @@ public abstract class BasePage {
     protected boolean isVisible(By locator) {
         try {
             return driver.findElements(locator).stream().anyMatch(WebElement::isDisplayed);
-        } catch (RuntimeException ignored) {
+        } catch (StaleElementReferenceException ignored) {
             return false;
         }
     }
@@ -56,8 +58,14 @@ public abstract class BasePage {
 
     protected String textOfFirstVisible(By... locators) {
         return Arrays.stream(locators)
-                .filter(this::isVisible)
-                .map(locator -> driver.findElement(locator).getText())
+                .flatMap(locator -> driver.findElements(locator).stream())
+                .map(element -> {
+                    try {
+                        return element.isDisplayed() ? element.getText() : "";
+                    } catch (StaleElementReferenceException ignored) {
+                        return "";
+                    }
+                })
                 .filter(text -> !text.isBlank())
                 .findFirst()
                 .orElse("");
@@ -71,9 +79,21 @@ public abstract class BasePage {
         return driver.getCurrentUrl();
     }
 
+    protected boolean waitForCondition(java.util.function.Function<WebDriver, Boolean> condition) {
+        try {
+            wait.until(condition);
+            return true;
+        } catch (TimeoutException ignored) {
+            return false;
+        }
+    }
+
     protected void waitForUrlContaining(String... urlParts) {
         wait.until(webDriver -> Arrays.stream(urlParts)
                 .anyMatch(part -> webDriver.getCurrentUrl().contains(part)));
     }
-}
 
+    protected void waitForUrlMatching(String regex) {
+        wait.until(webDriver -> webDriver.getCurrentUrl().matches(regex));
+    }
+}

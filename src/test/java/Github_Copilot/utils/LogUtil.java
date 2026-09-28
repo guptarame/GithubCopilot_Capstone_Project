@@ -1,7 +1,10 @@
 package Github_Copilot.utils;
 
+import Github_Copilot.config.TestConfig;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 public final class LogUtil {
 
@@ -33,11 +36,21 @@ public final class LogUtil {
     public static void error(String message, Throwable throwable) {
         String detail = throwable == null
                 ? "unknown error"
-                : throwable.getClass().getSimpleName() + ": " + throwable.getMessage();
+                : throwable.getClass().getSimpleName();
         log("ERROR", message + " [" + detail + "]");
     }
 
     private static void log(String level, String message) {
-        System.out.printf("[%s] [%s] %s%n", LocalDateTime.now().format(FORMATTER), level, message);
+        System.out.printf("[%s] [%s] %s%n", LocalDateTime.now().format(FORMATTER), level, redact(message));
+    }
+
+    private static String redact(String message) {
+        String redacted = message == null ? "" : message;
+        for (String secret : List.of(TestConfig.validUsername(), TestConfig.validPassword())) {
+            if (secret != null && !secret.isBlank()) {
+                redacted = redacted.replace(secret, "[REDACTED]");
+            }
+        }
+        return redacted;
     }
 }

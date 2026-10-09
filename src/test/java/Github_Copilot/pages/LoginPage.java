@@ -14,6 +14,7 @@ public class LoginPage extends BasePage {
     private final By rememberMeCheckbox = By.id("rememberme");
     private final By loginButton = By.name("login");
     private final By lostPasswordLink = By.linkText("Lost your password?");
+    private final By passwordRecoveryForm = By.cssSelector("form.woocommerce-ResetPassword");
     private final By dashboardContent = By.cssSelector("div.woocommerce-MyAccount-content");
     private final By errorBanner = By.cssSelector("ul.woocommerce-error, div.woocommerce-notices-wrapper .woocommerce-error");
     private final By logoutLink = By.linkText("Log out");
@@ -59,6 +60,10 @@ public class LoginPage extends BasePage {
 
     public boolean isUnauthenticated() {
         return !isLoggedIn();
+    }
+
+    public boolean isLogoutVisible() {
+        return isVisible(logoutLink);
     }
 
     public LoginPage enterUsername(String value) {
@@ -144,6 +149,10 @@ public class LoginPage extends BasePage {
     public void clickLostPassword() {
         click(lostPasswordLink);
         waitForCondition(webDriver -> isPasswordRecoveryUrl(webDriver.getCurrentUrl()));
+    }
+
+    public boolean isPasswordRecoveryFormVisible() {
+        return isVisible(passwordRecoveryForm);
     }
 
     private void waitForSubmissionOutcome() {

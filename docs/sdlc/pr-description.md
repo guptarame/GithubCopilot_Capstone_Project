@@ -1,17 +1,17 @@
-# Candidate Pull Request Description
+# Pull Request Description
 
-**Title:** [Feature] Strengthen Selenium login assertions and reporting
-**Proposed base:** `master`
-**Head:** Not available; no new remote head exists.
-**Publication state:** Draft only; no live PR was created.
+**Title:** [Feature] Strengthen Selenium login automation and SDLC
+**PR:** [#5](https://github.com/guptarame/GithubCopilot_Capstone_Project/pull/5)
+**State:** Open
+**Base:** `master` at `9a5383829fbd9bb2bbf2b327e54e8608d022896e`
+**Head:** `feature/selenium-login-automation` at `064ce4210f92ce5d967854364909a2a532ed3b28`
+**Reviewers:** None requested
 
 ## Summary
 
-The current local change set updates the Java/Maven/Selenium login test framework and its supporting SDLC assets. Framework changes include environment-only valid credentials and expected identity, explicit credential guards, stronger assertions for valid login identity, invalid-password rejection, and Remember Me after a same-profile browser restart. It also adds recovery-form visibility checks and updates test lifecycle and Extent reporting behavior. Supporting local changes touch workflow/documentation and agent customization assets.
+This PR updates the Java/Maven/Selenium login automation framework and its SDLC support. Framework changes include environment-only valid credentials and expected identity, explicit missing-credential guards, focused configuration and scenario-assertion tests, stronger valid-login identity and invalid-password checks, and updates to lifecycle/Extent reporting. It also revises repository Copilot SDLC assets, workflow guidance, and project documentation. The external login application is not modified.
 
-P4-01 is implemented: after the browser restarts, TS-LOG-005 requires nonblank dashboard content and a visible logout control. Focused helper tests cover success and either missing signal. This proves the assertion helper, not live session persistence.
-
-The local worktree is not yet a PR-scoped change set. It contains staged deletions alongside untracked replacement SDLC documents and assets, plus additional framework, workflow, and customization changes. Confirm the intended files and resolve that mixed state before publishing; this draft does not imply that every local change belongs in one PR. The external login application is not modified.
+The PR diff does not include the separate local `.vscode/mcp.json` modification.
 
 ## Requirements and Scope
 
@@ -23,11 +23,15 @@ FR-2 remains distinct from its source criterion: the tests exercise browser-nati
 
 Evidence is from the current [Stage 6 verification report](verification-report.md), dated 2026-10-09:
 
+**Stage 6 verdict: PASS WITH LIMITATIONS**, explicitly accepted for Stage 7 on 2026-10-09. All executed checks had zero failures and errors, but required scenarios were skipped and the FR-2 source criterion remains unmet.
+
 - `mvn -q -DskipTests compile test-compile`: passed, exit 0; no tests selected.
 - `mvn -q '-Dtest=TestConfigTests,CredentialTestGuardTests,LoginScenarioAssertionsTests,TestLifecycleTests' test`: passed, 14/14; 0 failures, 0 errors, 0 skips. The three `LoginScenarioAssertionsTests` include the P4-01 positive and negative checks.
 - `mvn -q -Dtest=LoginPageTests -Dbrowser=chrome -Dheadless=true -DrequireCredentialTests=false -DallowFailureScreenshots=false test`: 9 run, 6 passed, 0 failed, 0 errors, 3 skipped; Maven exit 0.
 
-The user accepted the report's limitations for Stage 7 on 2026-10-09, as recorded in the report. Acceptance does not turn skipped or unmet requirements into passes.
+The user acceptance does not turn skipped scenarios or unmet source requirements into passes.
+
+No tests were rerun for PR creation.
 
 ## Limitations
 
@@ -40,15 +44,14 @@ The user accepted the report's limitations for Stage 7 on 2026-10-09, as recorde
 
 ## Reviewer Checklist
 
-- [ ] Confirm the final PR file list and ensure it excludes unintended staged deletions or unrelated customization changes.
+- [ ] Review the full PR diff against `master` and the change scope.
 - [ ] Review environment-only credential and expected-identity inputs, guards, and privacy-safe diagnostics.
-- [ ] Check valid-login, invalid-password, and Remember Me assertion behavior, accounting for their skipped live scenarios.
+- [ ] Review valid-login and invalid-password assertions without treating skipped browser scenarios as passes.
+- [ ] Assess each PR #4 finding against the current diff; preserve unresolved findings and their limitations.
 - [ ] Keep FR-2's source inline-error criterion separate from the accepted native-validation project deviation.
 - [ ] Confirm the report's pass, skip, and unrun classifications, including Chrome-only scope and absent CI evidence.
 - [ ] Keep screenshot capture disabled unless page-level data and artifact handling have been reviewed.
 
-## PR State and Next Step
+## Prior Review Context
 
-GitHub PR #4 is **MERGED** into `master`; its head was `c5a48ac` and GitHub reports merge commit `9a53838`. The current local branch `feature/selenium-login-automation` and its `origin` tracking branch both still point to `c5a48ac`. There are no open PRs, and no new remote head contains the current local changes. PR #4 was not reopened or duplicated.
-
-No PR can be created for these changes from the available remote state. A new head must first be supplied on GitHub, or the user must separately authorize the necessary scoped commit and push. No staging, commit, branch creation, push, merge, reviewer request, or Stage 8 review was performed.
+The Stage 8 report at [code-review-report.md](code-review-report.md) records PR #4's **NEEDS REVISION** verdict and five findings. PR #4 was later merged; that history does not erase the findings or imply they were resolved. This head visibly removes source-code valid-credential defaults and restores active TS-LOG-002 outcome assertions. No blanket resolution is claimed for PR #4 findings; Stage 8 should assess their disposition against the current diff. PR #5 has not yet received its Stage 8 review.

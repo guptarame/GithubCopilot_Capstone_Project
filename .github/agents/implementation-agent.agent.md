@@ -52,6 +52,9 @@ architecture and implementation plan.
 
 ## Coding Standards
 
+- Use the page object model consistently throughout the test framework.
+- all test cases should be independent and reusable and follow page object model principles.
+- all test cases should be passed successfully before merging any changes.
 - Follow existing package structure and Java 21 conventions.
 - Use clear PascalCase classes, camelCase methods, and `UPPER_SNAKE_CASE`
   constants.

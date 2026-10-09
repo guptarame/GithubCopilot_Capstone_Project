@@ -1,6 +1,7 @@
 package Github_Copilot.base;
 
 import Github_Copilot.config.TestConfig;
+import Github_Copilot.listeners.ExtentReportExtension;
 import Github_Copilot.listeners.TestLifecycleListener;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.junit.jupiter.api.AfterEach;
@@ -20,29 +21,22 @@ import java.nio.file.Path;
 import java.util.Comparator;
 import java.time.Duration;
 
-@ExtendWith(TestLifecycleListener.class)
+@ExtendWith({TestLifecycleListener.class, ExtentReportExtension.class})
 public abstract class BaseTest {
 
     protected WebDriver driver;
-    private Path chromeProfileDir;
+    private Path persistentProfileDir;
 
     @BeforeEach
     void setupDriver(TestInfo testInfo) throws IOException {
-        boolean rememberMeTest = testInfo.getDisplayName().contains("Remember me");
-        if (rememberMeTest && "chrome".equals(TestConfig.browser())) {
-            chromeProfileDir = Files.createTempDirectory("remember-me-profile-");
-            driver = createChromeDriver(TestConfig.headless(), chromeProfileDir);
+        boolean rememberMeTest = testInfo.getDisplayName().toLowerCase().contains("remember me");
+        if (rememberMeTest) {
+            persistentProfileDir = Files.createTempDirectory("remember-me-profile-");
+            driver = createDriver(TestConfig.browser(), TestConfig.headless(), persistentProfileDir);
         } else {
             driver = createDriver(TestConfig.browser(), TestConfig.headless());
         }
         TestLifecycleListener.registerDriver(driver);
-        driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(TestConfig.pageLoadTimeout()));
-        driver.manage().timeouts().implicitlyWait(Duration.ZERO);
-        if (!TestConfig.headless()) {
-            driver.manage().window().maximize();
-        } else {
-            driver.manage().window().setSize(new Dimension(1920, 1080));
-        }
     }
 
     @AfterEach
@@ -53,7 +47,7 @@ public abstract class BaseTest {
             }
         } finally {
             TestLifecycleListener.clearDriver();
-            deleteChromeProfile();
+            deletePersistentProfile();
         }
     }
 
@@ -61,15 +55,25 @@ public abstract class BaseTest {
         return driver;
     }
 
-    protected Path getChromeProfileDir() {
-        return chromeProfileDir;
+    protected Path getPersistentProfileDir() {
+        return persistentProfileDir;
     }
 
-    private void deleteChromeProfile() {
-        if (chromeProfileDir == null) {
+    protected WebDriver restartDriver(Path profileDir) {
+        if (driver != null) {
+            driver.quit();
+            TestLifecycleListener.clearDriver();
+        }
+        driver = createDriver(TestConfig.browser(), TestConfig.headless(), profileDir);
+        TestLifecycleListener.registerDriver(driver);
+        return driver;
+    }
+
+    private void deletePersistentProfile() {
+        if (persistentProfileDir == null) {
             return;
         }
-        try (var paths = Files.walk(chromeProfileDir)) {
+        try (var paths = Files.walk(persistentProfileDir)) {
             paths.sorted(Comparator.reverseOrder()).forEach(path -> {
                 try {
                     Files.deleteIfExists(path);
@@ -80,11 +84,16 @@ public abstract class BaseTest {
         } catch (IOException ignored) {
             // Best-effort cleanup for browser-created profile files.
         } finally {
-            chromeProfileDir = null;
+            persistentProfileDir = null;
         }
     }
 
     protected WebDriver createDriver(String browser, boolean headless) {
+        return createDriver(browser, headless, null);
+    }
+
+    protected WebDriver createDriver(String browser, boolean headless, Path userDataDir) {
+        WebDriver webDriver;
         return switch (browser) {
             case "firefox" -> {
                 WebDriverManager.firefoxdriver().setup();
@@ -92,7 +101,12 @@ public abstract class BaseTest {
                 if (headless) {
                     options.addArguments("-headless");
                 }
-                yield new FirefoxDriver(options);
+                if (userDataDir != null) {
+                    options.addArguments("-profile", userDataDir.toAbsolutePath().toString());
+                }
+                webDriver = new FirefoxDriver(options);
+                configureDriver(webDriver, headless);
+                yield webDriver;
             }
             case "chrome" -> {
                 WebDriverManager.chromedriver().setup();
@@ -100,23 +114,29 @@ public abstract class BaseTest {
                 if (headless) {
                     options.addArguments("--headless=new");
                 }
+                if (userDataDir != null) {
+                    options.addArguments("--user-data-dir=" + userDataDir.toAbsolutePath());
+                }
                 options.addArguments("--disable-gpu", "--no-sandbox", "--window-size=1920,1080");
-                yield new ChromeDriver(options);
+                webDriver = new ChromeDriver(options);
+                configureDriver(webDriver, headless);
+                yield webDriver;
             }
             default -> throw new IllegalArgumentException("Unsupported browser: " + browser);
         };
     }
 
+    private void configureDriver(WebDriver webDriver, boolean headless) {
+        webDriver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(TestConfig.pageLoadTimeout()));
+        webDriver.manage().timeouts().implicitlyWait(Duration.ZERO);
+        if (!headless) {
+            webDriver.manage().window().maximize();
+        } else {
+            webDriver.manage().window().setSize(new Dimension(1920, 1080));
+        }
+    }
+
     protected WebDriver createChromeDriver(boolean headless, Path userDataDir) {
-        WebDriverManager.chromedriver().setup();
-        ChromeOptions options = new ChromeOptions();
-        if (headless) {
-            options.addArguments("--headless=new");
-        }
-        if (userDataDir != null) {
-            options.addArguments("--user-data-dir=" + userDataDir.toAbsolutePath());
-        }
-        options.addArguments("--disable-gpu", "--no-sandbox", "--window-size=1920,1080");
-        return new ChromeDriver(options);
+        return createDriver("chrome", headless, userDataDir);
     }
 }

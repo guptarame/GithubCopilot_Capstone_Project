@@ -1,0 +1,37 @@
+{
+  "servers": {
+    "confluence": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "-e",
+        "CONFLUENCE_URL",
+        "-e",
+        "CONFLUENCE_USERNAME",
+        "-e",
+        "CONFLUENCE_API_TOKEN",
+        "ghcr.io/sooperset/mcp-atlassian:latest"
+      ],
+      "env": {
+        "CONFLUENCE_URL": "https://epam-team-en32bjvm.atlassian.net/wiki",
+        "CONFLUENCE_USERNAME": "${input:confluenceUsername}",
+        "CONFLUENCE_API_TOKEN": "${input:confluenceApiToken}"
+      }
+    }
+  },
+  "inputs": [
+    {
+      "id": "confluenceUsername",
+      "type": "promptString",
+      "description": "Atlassian account email"
+    },
+    {
+      "id": "confluenceApiToken",
+      "type": "promptString",
+      "description": "Atlassian API token",
+      "password": true
+    }
+  ]
+}

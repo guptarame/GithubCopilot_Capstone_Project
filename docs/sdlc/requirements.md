@@ -1,168 +1,107 @@
 # Requirements Document
 
-**Feature:** Customer Login & Authentication
-**Source:** Confluence PRD — https://epam-team-en32bjvm.atlassian.net/wiki/spaces/MFS/pages/11796481/Customer+Login+Authentication
-**Date:** 2026-09-26
+**Feature:** Customer Login & Authentication on My Account Page
+**Source:** [Confluence PRD, Customer Login & Authentication](https://epam-team-en32bjvm.atlassian.net/wiki/spaces/MFS/pages/11796481/Customer+Login+Authentication) (page ID 11796481, space MFS, version 2; last updated 2026-09-21 16:32:06 UTC)
+**Date:** 2026-10-09
 **Agent:** requirements-agent
+
+**Fresh Stage 1 source recheck (2026-10-09):** The current Confluence page was retrieved by page ID and its full content reviewed. Its version, title, source criteria, and six test scenarios match this analysis; no product requirement changes were needed. The required-field source criterion remains application-rendered inline errors. The browser-native validation deviation below is project context only and does not fulfill that criterion; its approval is retained as recorded in the prior artifact, not independently re-verified during this source recheck.
 
 ---
 
 ## Overview
-The system shall provide a customer login experience for the WooCommerce My Account page, covering successful authentication, invalid credentials, missing form data, account recovery navigation, and session persistence via the Remember Me option. The automation must validate user-visible outcomes without hardcoding sensitive credentials in source code.
+
+A registered customer shall be able to authenticate from the My Account login page to access the customer dashboard and account-management functions. The login flow includes credential entry, optional session persistence, required-field feedback, invalid-credential feedback, and password recovery navigation.
+
+**Scope:** Login on the My Account page at <https://askomdch.com/account/>. The PRD identifies the feature as High priority and Critical severity.
 
 ---
 
 ## Functional Requirements
 
-### FR-1: Login form is visible and usable
-**Description:** The system shall present the username/email field, password field, remember-me checkbox, login button, and lost-password link on the login page.
-**Acceptance Criteria:**
-- The username field is visible before login.
-- The password field is visible before login.
-- The remember-me option is available.
-- The login action is available.
-- The lost-password link is present and clickable.
+### FR-1: Display login controls
+**Description:** The login form shall provide a username/email field (`id=username`), a password field (`id=password`), a Remember Me checkbox, a visible and clickable Log in button (`name=login`), and a Lost your password? link.
+**Acceptance Criteria:** The specified controls are present and identifiable by their stated labels and attributes. (TS-LOG-004, TS-LOG-005, TS-LOG-006)
 
-### FR-2: Valid customer login succeeds
-**Description:** The system shall authenticate a user when a valid username/email and matching password are submitted.
-**Acceptance Criteria:**
-- A valid login reaches the authenticated dashboard state.
-- The user sees a post-login welcome or logout state.
-- The system does not remain on the login form after a successful submission.
+### FR-2: Validate required credentials
+**Description:** The login form shall prevent submission when the username/email or password is empty and show an inline required-field error for each empty field.
+**Source acceptance criterion:** Submitting both fields empty leaves the user on the login page and displays inline required errors for both fields. (TS-LOG-004)
+**Approved project deviation (2026-10-02):** The existing requirements artifact records human reviewer acceptance of browser-native required-field validation for this automation scope instead of application-rendered inline errors. No separate approval record was retrieved during this analysis. This does not change or reinterpret the source PRD.
+**Project acceptance criteria:** Empty submission remains on the login page; browser-native validation identifies each empty field as required. (TS-LOG-004, TS-LOG-007, TS-LOG-008)
 
-### FR-3: Invalid password is rejected
-**Description:** The system shall reject an incorrect password and keep the user in the unauthenticated state.
-**Acceptance Criteria:**
-- An incorrect password displays an authentication error.
-- The user is not logged in after the attempt.
-- The login form remains visible.
+### FR-3: Authenticate valid credentials
+**Description:** The system shall authenticate a registered customer when valid credentials are submitted.
+**Acceptance Criteria:** Successful authentication redirects to the customer dashboard / My Account home and displays a welcome message identifying the customer and a Log out option. (TS-LOG-001)
 
-### FR-4: Unknown account is rejected
-**Description:** The system shall reject an unregistered username/email and show an appropriate error message.
-**Acceptance Criteria:**
-- An unregistered account does not authenticate the user.
-- The user remains on the login form.
-- The feedback message indicates the account is unknown or not found.
+### FR-4: Report invalid credentials
+**Description:** The system shall reject an incorrect password or an unregistered username/email and show an error at the top of the login form.
+**Acceptance Criteria:** Each invalid-credential case remains on the login page and displays an error indicating the credentials are incorrect or the username/email is invalid. (TS-LOG-002, TS-LOG-003)
 
-### FR-5: Blank-field validation is enforced
-**Description:** The system shall validate empty username and/or password entries before allowing login.
-**Acceptance Criteria:**
-- An empty username triggers a validation message.
-- An empty password triggers a validation message.
-- Submitting blank values does not authenticate the user.
+### FR-5: Persist a remembered session
+**Description:** When Remember Me is selected, the customer session shall remain active across browser restarts.
+**Acceptance Criteria:** After successful login with Remember Me selected, restarting the browser does not end the customer session. (TS-LOG-005)
 
-### FR-6: Remember Me persists session state
-**Description:** The system shall preserve the authenticated session when the Remember Me option is selected and the browser profile is reused.
-**Acceptance Criteria:**
-- A valid login with remember-me enabled creates a persistent session.
-- Reopening the browser with the same profile keeps the user authenticated.
-
-### FR-7: Lost password flow is navigable
-**Description:** The system shall allow a customer to follow the lost-password path from the login page.
-**Acceptance Criteria:**
-- Clicking “Lost your password?” navigates to a valid password recovery page.
-- The user is not shown as authenticated after navigation.
-
-### FR-8: Browser and environment configuration are supported
-**Description:** The automation framework shall support configured browser selection and runtime overrides for test execution.
-**Acceptance Criteria:**
-- Chrome and Firefox are supported.
-- Headless mode can be enabled through configuration.
-- Base URL and timeout overrides are configurable via system properties or environment variables.
+### FR-6: Navigate to password recovery
+**Description:** The Lost your password? link shall direct the customer to the password reset/recovery flow.
+**Acceptance Criteria:** Activating the link opens the password reset or recovery page. (TS-LOG-006)
 
 ---
 
 ## Non-Functional Requirements
 
-### NFR-1: Reliability
-**Requirement:** The automation shall produce stable results without brittle sleeps or flaky timing assumptions.
-**Acceptance Criteria:**
-- Explicit waits are used for UI state changes.
-- Test retries are not required to pass normal flow validation.
-
-### NFR-2: Security and credential handling
-**Requirement:** The test framework shall avoid embedding secret credentials in source control.
-**Acceptance Criteria:**
-- Production or account credentials are sourced from environment variables or system properties.
-- No hardcoded secrets appear in committed code or reports.
-
-### NFR-3: Maintainability
-**Requirement:** The test suite shall use a clear page object model and share reusable logic.
-**Acceptance Criteria:**
-- Selectors and UI actions are centralized in page objects.
-- Reusable browser setup and teardown logic are centralized in base classes.
-
-### NFR-4: Reporting and diagnostics
-**Requirement:** The automation shall capture useful failure diagnostics.
-**Acceptance Criteria:**
-- Test execution emits clear logs.
-- Failures include or support screenshots and browser lifecycle reporting.
-
-### NFR-5: Cross-browser compatibility
-**Requirement:** The suite shall support at least the default browser configuration and an alternative browser configuration.
-**Acceptance Criteria:**
-- Chrome validation is available.
-- Firefox remains supported when configured.
+### NFR-1: Performance and security criteria are unspecified
+**Requirement:** The PRD provides no measurable performance or security requirements. It describes secure login as a user goal, but specifies no measurable security criteria or performance thresholds.
+**Acceptance Criteria:** No measurable performance or security acceptance criteria can be derived from the supplied PRD; these remain unspecified rather than assigned invented targets.
 
 ---
 
 ## User Stories
 
-**US-1:** As a customer, I want to sign in with valid credentials so that I can access my account dashboard.
-**Acceptance Criteria:**
-- Valid credentials result in an authenticated session.
-- A dashboard or welcome message is displayed.
+**US-AUTH-002:** As a registered customer/e-commerce shopper, I want to securely log into my account using my username/email and password, so that I can view my dashboard, manage orders, update billing/shipping addresses, and review account details.
 
-**US-2:** As a customer, I want invalid login attempts to be rejected so that my account remains secure.
-**Acceptance Criteria:**
-- Incorrect passwords and unknown users are blocked.
-- The system shows the appropriate feedback message.
-
-**US-3:** As a customer, I want form validation for empty fields so that I know which input is required.
-**Acceptance Criteria:**
-- Required-field errors appear when the form is submitted blank.
-- The user remains on the login form.
-
-**US-4:** As a customer, I want remember-me support so that I can return to my account without re-entering credentials.
-**Acceptance Criteria:**
-- Session persists with the same browser profile.
-
-**US-5:** As a customer, I want a password recovery route so that I can recover access when needed.
-**Acceptance Criteria:**
-- The lost-password link redirects to a recovery page.
+**Acceptance Criteria:** Covered by FR-1 through FR-6 and scenarios TS-LOG-001 through TS-LOG-006 above.
 
 ---
+
+## Constraints
+
+- The customer has an active internet connection and a supported browser.
+- The customer has a registered account on askomdch.com.
+- The customer is on the My Account login page: <https://askomdch.com/account/>.
+- The PRD identifies the module as Customer Login Portal.
 
 ## Out of Scope
-- Social login or SSO integration
-- Account registration flow
-- Payment or checkout functionality
-- Parallel browser execution in V1
-- Mobile app automation
 
----
+The PRD does not specify out-of-scope functionality.
 
 ## Dependencies
-- Selenium WebDriver and browser drivers
-- Java 21+
-- Maven 3.9+
-- Browser availability (Chrome and Firefox)
-- Access to the live authentication site (`https://askomdch.com/account/`)
 
----
+- Internet access and a supported browser.
+- A registered customer account on askomdch.com.
+- The My Account login page, customer dashboard, and password reset/recovery flow identified by the PRD.
 
 ## Assumptions
-- The target site uses standard WooCommerce login fields and validation behavior.
-- Valid credentials are available through environment configuration when credential-dependent tests run.
-- The browser profile can be reused for the Remember Me persistence scenario.
 
----
+No additional assumptions have been introduced beyond the stated PRD preconditions.
+
+## Open Questions
+
+- What is the expected duration of a Remember Me session? The PRD requires persistence across browser restarts but does not define a duration.
+- Are the PRD's example error messages illustrative, or must exact message text be used?
+- What measurable security and performance criteria, if any, should be added?
+
+## Approved Deviations
+
+- On 2026-10-02, the human reviewer accepted browser-native required-field validation in place of the source PRD's application-rendered inline errors for FR-2. Verification must report this as a project-approved deviation, not as fulfillment of the source wording.
 
 ## Success Criteria
-The feature is considered complete when the login automation verifies successful login, invalid-password rejection, unknown-user rejection, blank-field validation, remember-me persistence, and password recovery navigation across the supported browser configuration.
 
----
+All six PRD test scenarios pass: valid login redirects with a welcome message (TS-LOG-001); incorrect password and unregistered username/email each show an error on the login page (TS-LOG-002 and TS-LOG-003); empty submission is prevented and both required errors appear (TS-LOG-004); Remember Me preserves the session across browser restarts (TS-LOG-005); and the lost-password link opens recovery (TS-LOG-006).
 
 ## Traceability
-- Source: Confluence PRD page (URL above)
-- Next Stage: Architecture
+
+- Source read for this analysis: [Customer Login & Authentication PRD](https://epam-team-en32bjvm.atlassian.net/wiki/spaces/MFS/pages/11796481/Customer+Login+Authentication), page ID 11796481, space MFS, version 2, last updated 2026-09-21 16:32 UTC.
+- FR-1 maps to Acceptance Criteria 1 (Page UI & Elements); FR-2 maps to Acceptance Criteria 2 (Validation & Field Checks) and TS-LOG-004; FR-3 maps to Acceptance Criteria 3 (Successful Authentication) and TS-LOG-001; FR-4 maps to Acceptance Criteria 4 (Failed Authentication) and TS-LOG-002/003; FR-5 and FR-6 map to the corresponding TS-LOG-005 and TS-LOG-006 scenarios.
+- NFR-1 reflects the absence of measurable performance or security criteria in the supplied PRD; no thresholds have been inferred.
+- FR-2 browser-native validation is recorded as a project deviation from the PRD's inline-error criterion; the source requirement remains unchanged above.
+- Next Stage: Architecture.

@@ -1,63 +1,57 @@
+# Pull Request Description
+
+**Title:** [Feature] Strengthen Selenium login automation and SDLC
+**PR:** [#5](https://github.com/guptarame/GithubCopilot_Capstone_Project/pull/5)
+**State:** Open
+**Base:** `master` at `9a5383829fbd9bb2bbf2b327e54e8608d022896e`
+**Head:** `feature/selenium-login-automation` (see the live PR for the current commit)
+**Reviewers:** None requested
+
 ## Summary
-This PR implements a complete Selenium test automation framework for the customer login authentication flow. The framework covers successful login, failed authentication, validation errors, session persistence, and password recovery navigation, using a reusable Page Object Model and centralized configuration.
 
-**PRD:** Confluence PRD — https://epam-team-en32bjvm.atlassian.net/wiki/spaces/MFS/pages/11796481/Customer+Login+Authentication
-**Traceability:** Full SDLC artifacts are in `docs/sdlc/`
+This PR updates the Java/Maven/Selenium login automation framework and its SDLC support. Framework changes include environment-only valid credentials and expected identity, explicit missing-credential guards, focused configuration and scenario-assertion tests, stronger valid-login identity and invalid-password checks, and updates to lifecycle/Extent reporting. It also revises repository Copilot SDLC assets, workflow guidance, and project documentation. The external login application is not modified.
 
----
+The PR diff does not include the separate local `.vscode/mcp.json` modification.
 
-## Changes Made
+## Requirements and Scope
 
-### Core framework
-- `BaseTest.java` for WebDriver lifecycle setup and teardown
-- `BasePage.java` for common Selenium utilities, waits, and interactions
-- `LoginPage.java` for login page behavior and validation logic
-- `TestConfig.java` for system/env configuration and browser defaults
-- `TestData.java` for reusable assertions and tokens
+The test framework maps behavior to FR-1 through FR-6 and the login scenarios in the current [requirements](requirements.md), with page objects owning browser interactions and dedicated configuration, guard, assertion, lifecycle, and reporting components.
 
-### Test coverage
-- Valid login success flow
-- Invalid password rejection
-- Unknown user rejection
-- Blank-field validation
-- Remember Me persistence
-- Lost password navigation
-- Required login element verification
+FR-2 remains distinct from its source criterion: the tests exercise browser-native required-field validation as an accepted project deviation, but the source PRD requires application-rendered inline errors. The source requirement remains unmet; this draft does not claim otherwise.
 
-### Reporting / diagnostics
-- `TestLifecycleListener` for lifecycle reporting
-- `ExtentReportExtension` for enhanced test reporting
-- Logging and cleanup hooks for browser sessions
+## Verification Evidence
 
-### SDLC artifacts
-- `docs/sdlc/requirements.md`
-- `docs/sdlc/architecture.md`
-- `docs/sdlc/design-review.md`
-- `docs/sdlc/impl-plan.md`
-- `docs/sdlc/verification-report.md`
+Evidence is from the current [Stage 6 verification report](verification-report.md), dated 2026-10-09:
 
----
+**Stage 6 verdict: PASS WITH LIMITATIONS**, explicitly accepted for Stage 7 on 2026-10-09. All executed checks had zero failures and errors, but required scenarios were skipped and the FR-2 source criterion remains unmet.
 
-## Test Evidence
+- `mvn -q -DskipTests compile test-compile`: passed, exit 0; no tests selected.
+- `mvn -q '-Dtest=TestConfigTests,CredentialTestGuardTests,LoginScenarioAssertionsTests,TestLifecycleTests' test`: passed, 14/14; 0 failures, 0 errors, 0 skips. The three `LoginScenarioAssertionsTests` include the P4-01 positive and negative checks.
+- `mvn -q -Dtest=LoginPageTests -Dbrowser=chrome -Dheadless=true -DrequireCredentialTests=false -DallowFailureScreenshots=false test`: 9 run, 6 passed, 0 failed, 0 errors, 3 skipped; Maven exit 0.
 
-```text
-mvn test -q
-```
+The user acceptance does not turn skipped scenarios or unmet source requirements into passes.
 
-Result: 9/9 tests passed, 0 failed, 0 skipped.
+No tests were rerun for PR creation.
 
----
+## Limitations
 
-## Known Limitations
-- This is a V1 sequential framework; parallel execution is out of scope.
-- Browser-version compatibility requires regular validation when Chrome/Firefox updates.
-- Real credentials must remain supplied through environment variables when credential-dependent testing is required.
-
----
+- TS-LOG-001 (valid login and expected identity), TS-LOG-002 (invalid password with a known username), and TS-LOG-005 (Remember Me across restart) were skipped because required runtime values were unavailable. All three remain unverified, not passed; in particular, the live TS-LOG-005 restart and persistence behavior did not run.
+- The source FR-2 inline-error criterion remains unmet by the accepted browser-native validation deviation.
+- Firefox and cross-browser verification are unrun and outside the current Chrome-only scope. No CI execution was observed.
+- TS-LOG-006 evidence covers recovery navigation, visible form, and unauthenticated state only; reset submission/completion is unverified.
+- Screenshot capture was disabled. Page-level screenshot safety, performance, slow-network behavior, repeatability, and failure-path cleanup were not established.
+- Overall US-AUTH-002 acceptance is not met; no claim of full feature completion is made.
 
 ## Reviewer Checklist
-- [ ] Framework architecture is clear and maintainable
-- [ ] Login scenarios are covered comprehensively
-- [ ] Browser configuration and teardown are safe
-- [ ] Verification evidence is documented
-- [ ] Security expectations for credentials are respected
+
+- [ ] Review the full PR diff against `master` and the change scope.
+- [ ] Review environment-only credential and expected-identity inputs, guards, and privacy-safe diagnostics.
+- [ ] Review valid-login and invalid-password assertions without treating skipped browser scenarios as passes.
+- [ ] Assess each PR #4 finding against the current diff; preserve unresolved findings and their limitations.
+- [ ] Keep FR-2's source inline-error criterion separate from the accepted native-validation project deviation.
+- [ ] Confirm the report's pass, skip, and unrun classifications, including Chrome-only scope and absent CI evidence.
+- [ ] Keep screenshot capture disabled unless page-level data and artifact handling have been reviewed.
+
+## Prior Review Context
+
+The Stage 8 report at [code-review-report.md](code-review-report.md) records PR #4's **NEEDS REVISION** verdict and five findings. PR #4 was later merged; that history does not erase the findings or imply they were resolved. This head visibly removes source-code valid-credential defaults and restores active TS-LOG-002 outcome assertions. No blanket resolution is claimed for PR #4 findings; Stage 8 should assess their disposition against the current diff. PR #5 has not yet received its Stage 8 review.

@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -23,22 +22,22 @@ class LoginPageTests extends BaseTest {
     @DisplayName("TS-LOG-001: Successful login with valid username/email and password")
     void shouldLoginSuccessfullyWithValidCredentials() {
         requireValidCredentials("valid-login");
+        String expectedWelcomeIdentity = TestConfig.expectedWelcomeIdentity();
+        CredentialTestGuard.requireExpectedWelcomeIdentity(expectedWelcomeIdentity,
+                TestConfig.requireCredentialTests(), "valid-login");
 
         LoginPage loginPage = new LoginPage(driver).openPage(TestConfig.baseUrl());
 
-        String message = loginPage
+        loginPage
                 .enterUsername(TestConfig.validUsername())
                 .enterPassword(TestConfig.validPassword())
-                .submitLogin()
-                .getFeedbackMessage()
-                .toLowerCase();
+                .submitLogin();
 
         assertAll(
                 () -> assertTrue(loginPage.isLoggedIn(), "Expected the user to be authenticated after valid login."),
-                () -> assertTrue(containsAny(message, TestData.SUCCESS_MESSAGE_TOKENS),
-                        "Expected a post-login welcome area or logout reference."),
-                () -> assertTrue(containsAny(loginPage.getDashboardText().toLowerCase(), TestData.SUCCESS_MESSAGE_TOKENS),
-                        "Expected dashboard text to show the logged-in welcome state.")
+                () -> LoginScenarioAssertions.assertCustomerIdentifyingWelcome(
+                        loginPage.getDashboardText(), expectedWelcomeIdentity),
+                () -> assertTrue(loginPage.isLogoutVisible(), "Expected a visible logout control.")
         );
     }
 
@@ -56,12 +55,8 @@ class LoginPageTests extends BaseTest {
                 .getFeedbackMessage()
                 .toLowerCase();
 
-   //     assertTrue(containsAny(message, TestData.INVALID_PASSWORD_MESSAGE_TOKENS),
-     //           "Expected an incorrect-password style error message.");
-      //  assertAll(
-        //        () -> assertFalse(loginPage.isLoggedIn(), "Invalid login must not authenticate the user."),
-          //      () -> assertTrue(loginPage.isLoginFormVisible(), "Invalid login should remain on the login page.")
-       // );
+        LoginScenarioAssertions.assertInvalidPasswordOutcome(
+                message, loginPage.isLoggedIn(), loginPage.isLoginFormVisible());
     }
 
     @Test
@@ -85,7 +80,7 @@ class LoginPageTests extends BaseTest {
     }
 
     @Test
-    @DisplayName("TS-LOG-004: Validation appears for blank username and password")
+        @DisplayName("TS-LOG-004: Browser validation blocks blank fields; PRD inline behavior unresolved")
     void shouldShowValidationForBlankFields() {
         LoginPage loginPage = new LoginPage(driver).openPage(TestConfig.baseUrl());
 
@@ -105,7 +100,7 @@ class LoginPageTests extends BaseTest {
     }
 
     @Test
-    @DisplayName("TS-LOG-007: Validation appears when username/email is blank")
+        @DisplayName("TS-LOG-007: Browser validation blocks blank username; PRD inline behavior unresolved")
     void shouldShowValidationForBlankUsername() {
         LoginPage loginPage = new LoginPage(driver).openPage(TestConfig.baseUrl());
 
@@ -116,7 +111,7 @@ class LoginPageTests extends BaseTest {
                 .getFeedbackMessage()
                 .toLowerCase();
 
-        assertTrue(containsAny(message, List.of("username", "user name", "required")),
+        assertTrue(containsAny(message, TestData.BLANK_USERNAME_MESSAGE_TOKENS),
                 "Expected username required-field validation message.");
         assertAll(
                 () -> assertFalse(loginPage.isLoggedIn(), "Blank username must not authenticate the user."),
@@ -125,7 +120,7 @@ class LoginPageTests extends BaseTest {
     }
 
     @Test
-    @DisplayName("TS-LOG-008: Validation appears when password is blank")
+        @DisplayName("TS-LOG-008: Browser validation blocks blank password; PRD inline behavior unresolved")
     void shouldShowValidationForBlankPassword() {
         LoginPage loginPage = new LoginPage(driver).openPage(TestConfig.baseUrl());
 
@@ -136,7 +131,7 @@ class LoginPageTests extends BaseTest {
                 .getFeedbackMessage()
                 .toLowerCase();
 
-        assertTrue(containsAny(message, List.of("password", "required")),
+        assertTrue(containsAny(message, TestData.BLANK_PASSWORD_MESSAGE_TOKENS),
                 "Expected password required-field validation message.");
         assertAll(
                 () -> assertFalse(loginPage.isLoggedIn(), "Blank password must not authenticate the user."),
@@ -173,7 +168,8 @@ class LoginPageTests extends BaseTest {
                 .load(TestConfig.baseUrl())
                 .waitForDashboard();
 
-        assertTrue(restoredPage.isLoggedIn(), "Expected the authenticated session to persist after browser restart.");
+        LoginScenarioAssertions.assertRememberMeSession(
+                restoredPage.getDashboardText(), restoredPage.isLogoutVisible());
     }
 
     @Test
@@ -186,6 +182,8 @@ class LoginPageTests extends BaseTest {
         assertAll(
                 () -> assertTrue(loginPage.getCurrentUrl().matches(".*/(lost-password|reset-password)(/.*)?(?:\\?.*)?"),
                         "Expected navigation to the password recovery destination."),
+                () -> assertTrue(loginPage.isPasswordRecoveryFormVisible(),
+                        "Expected the password recovery form to be visible."),
                 () -> assertFalse(loginPage.isLoggedIn(), "Password reset navigation must remain unauthenticated."));
     }
 
@@ -206,21 +204,13 @@ class LoginPageTests extends BaseTest {
         return tokens.stream().anyMatch(text::contains);
     }
 
-    private void requireValidCredentials(String scenario) {
-        boolean hasCredentials = !TestConfig.validUsername().isBlank() && !TestConfig.validPassword().isBlank();
-        if (TestConfig.requireCredentialTests() && !hasCredentials) {
-            fail("Credential-dependent " + scenario + " coverage is required but credentials were not provided.");
-        }
-        Assumptions.assumeTrue(hasCredentials,
-                "Skipping " + scenario + " test because credentials were not provided.");
+        private void requireValidCredentials(String scenario) {
+                CredentialTestGuard.requireCredentials(TestConfig.validUsername(), TestConfig.validPassword(),
+                                TestConfig.requireCredentialTests(), scenario);
     }
 
     private void requireValidUsername(String scenario) {
-        boolean hasUsername = !TestConfig.validUsername().isBlank();
-        if (TestConfig.requireCredentialTests() && !hasUsername) {
-            fail("Credential-dependent " + scenario + " coverage is required but a known valid username was not provided.");
-        }
-        Assumptions.assumeTrue(hasUsername,
-                "Skipping " + scenario + " test because a known valid username was not provided.");
+                CredentialTestGuard.requireUsername(TestConfig.validUsername(),
+                                TestConfig.requireCredentialTests(), scenario);
     }
 }

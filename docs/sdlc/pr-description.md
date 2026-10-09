@@ -4,7 +4,7 @@
 **PR:** [#5](https://github.com/guptarame/GithubCopilot_Capstone_Project/pull/5)
 **State:** Open
 **Base:** `master` at `9a5383829fbd9bb2bbf2b327e54e8608d022896e`
-**Head:** `feature/selenium-login-automation` at `064ce4210f92ce5d967854364909a2a532ed3b28`
+**Head:** `feature/selenium-login-automation` (see the live PR for the current commit)
 **Reviewers:** None requested
 
 ## Summary

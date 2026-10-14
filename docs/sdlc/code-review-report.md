@@ -1,3 +1,110 @@
+# Stage 8 Code Review Report — PR #5 (Current Review: 2026-10-14)
+
+## Review Metadata and Verdict
+
+| Item | Evidence |
+| --- | --- |
+| Repository / PR | [guptarame/GithubCopilot_Capstone_Project#5](https://github.com/guptarame/GithubCopilot_Capstone_Project/pull/5) |
+| Live state | **OPEN**, not merged; verified from GitHub during this review. |
+| Base / head | `master` at `9a5383829fbd9bb2bbf2b327e54e8608d022896e` / `feature/selenium-login-automation` at `181557cc778f4311dc742f7f9b0681ffc64a152c`; verified live and local `HEAD` matches the head SHA. |
+| Diff | GitHub API and `gh pr diff` verified the complete three-dot diff: **51 changed paths**, 3,482 additions, 1,957 deletions. The separate local `.vscode/mcp.json` edit is not in the PR. |
+| Verdict | **NEEDS REVISION**: one AC 2.1 assertion can accept a non-dashboard account page, and the PR removes all push/PR CI without a replacement. Two SDLC artifacts also contradict current live/verification state. |
+| Publication | The user approved all four findings on 2026-10-14. GitHub accepted three new inline comments and one reply in the existing unresolved description thread. No formal APPROVE or REQUEST_CHANGES review, merge, commit, or push was performed. |
+
+This section is the current review record and supersedes the prior PR #5 status and findings below where their snapshots differ. All existing review history is retained verbatim after this section.
+
+## Scope and Evidence
+
+Reviewed the complete GitHub diff and all 51 changed paths, current live PR metadata/body, existing submitted-review metadata and inline comments, relevant Java source/tests and `pom.xml`, README and Copilot instructions, requirements, architecture, design review, implementation plan, verification report, and the prior review history. The checked-out source is the live head. Local modifications to `.vscode/mcp.json`, `docs/sdlc/pr-description.md`, and `docs/sdlc/code-review-report.md` were treated as worktree-only and were not attributed to the PR. Only this report was edited.
+
+GitHub review history contains one prior `COMMENTED` review and one inline comment on `docs/sdlc/pr-description.md` asking that its head SHA be synchronized or omitted. No formal approval/request-changes review or PR conversation comment was found. The current live PR body now reports the correct OPEN state and head, but the committed description artifact still contains the stale state and SHA noted below.
+
+### Changed Paths Reviewed
+
+- Agent definitions: `.github/agents/architecture-agent.agent.md` (deleted), `.github/agents/architecture.agent.md`, `.github/agents/code-review-agent.agent.md` (deleted), `.github/agents/code-review.agent.md`, `.github/agents/design-review-agent.agent.md` (deleted), `.github/agents/design-review.agent.md`, `.github/agents/implementation-agent.agent.md` (deleted), `.github/agents/implementation.agent.md`, `.github/agents/planning-agent.agent.md` (deleted), `.github/agents/planning.agent.md`, `.github/agents/pr-agent.agent.md` (deleted), `.github/agents/pr.agent.md`, `.github/agents/requirements-agent.agent.md` (deleted), `.github/agents/requirements.agent.md`, `.github/agents/sdlc_orchestrator.agent.md`, `.github/agents/verification-agent.agent.md` (deleted), `.github/agents/verification.agent.md`.
+- Copilot guidance: `.github/copilot-instructions.md`, `.github/hooks/pre-commit.md`, `.github/prompts/code-review.prompt.md`, `.github/prompts/requirements.prompt.md`, `.github/rules/implementation-stage-rules.md`, `.github/rules/planning-stage-rules.md`, `.github/skills/selenium-code-review.md`, `.github/skills/selenium-verification-testing.md`, `.github/subagents/implementation-stage.md`, `.github/workflows/selenium-login.yml` (deleted), `copilot-instructions.md`, `README.md`, `templates/README.md`.
+- SDLC artifacts: `docs/sdlc/architecture.md`, `docs/sdlc/code-review-report.md`, `docs/sdlc/design-review.md`, `docs/sdlc/impl-plan.md`, `docs/sdlc/pr-description.md`, `docs/sdlc/requirements.md`, `docs/sdlc/verification-report.md`.
+- Java: `src/test/java/Github_Copilot/config/TestConfig.java`, `src/test/java/Github_Copilot/config/TestConfigTests.java`, `src/test/java/Github_Copilot/data/TestData.java`, `src/test/java/Github_Copilot/listeners/ExtentReportExtension.java`, `src/test/java/Github_Copilot/listeners/TestLifecycleListener.java`, `src/test/java/Github_Copilot/listeners/TestLifecycleTests.java`, `src/test/java/Github_Copilot/listeners/TestOutcome.java`, `src/test/java/Github_Copilot/pages/LoginPage.java`, `src/test/java/Github_Copilot/tests/CredentialTestGuard.java`, `src/test/java/Github_Copilot/tests/CredentialTestGuardTests.java`, `src/test/java/Github_Copilot/tests/LoginPageTests.java`, `src/test/java/Github_Copilot/tests/LoginScenarioAssertions.java`, `src/test/java/Github_Copilot/tests/LoginScenarioAssertionsTests.java`, `src/test/java/Github_Copilot/utils/ScreenshotUtil.java`.
+
+Relevant unchanged context included `pom.xml`, `src/test/java/Github_Copilot/base/BaseTest.java`, `src/test/java/Github_Copilot/pages/BasePage.java`, and `src/test/java/Github_Copilot/utils/LogUtil.java`. The base-commit workflow was also inspected to establish what the deletion removes.
+
+## Summary
+
+The changed Java code improves environment-only credential and identity inputs, required-mode guards, bounded configuration, negative-login assertions, dashboard and notice-position checks, and focused tests. The Stage 6 report records a required-mode Chrome execution of 24/24 passing tests, zero failures/errors/skips, and explicit user acceptance of **PASS WITH LIMITATIONS** for Stage 7. AC 5.1 remains unmet because those tests cover browser-native validation rather than application-rendered inline errors; the acceptance does not change that source criterion. Firefox, performance/reliability, security/dependency scans, and CI execution are unverified.
+
+Confirmed positive evidence: credential values are environment-only; missing required values fail visibly and optional omissions abort; waits are bounded; the screenshot default is off; the scenario helper checks invalid-password feedback and notice position; the test compares the welcome identity without logging it; and the source and reports preserve the AC 5.1 limitation. The source verification result is attributed to the Stage 6 report, not a run by this reviewer.
+
+## Findings
+
+### 1. MEDIUM — The successful-login destination assertion does not distinguish the dashboard home
+
+**Location:** `src/test/java/Github_Copilot/pages/LoginPage.java:71-73`; exercised by `src/test/java/Github_Copilot/tests/LoginPageTests.java:37`
+**Confidence:** 9/10
+
+`isMyAccountDashboardVisible()` returns true when the generic WooCommerce account navigation and `woocommerce-MyAccount-content` container are visible. Those elements are also present on account subpages, so a successful login redirected to (for example) an edit-account or orders page can satisfy this assertion without reaching the dashboard/My Account home required by AC 2.1. The implementation plan explicitly requires the scenario to fail for a non-home destination.
+
+**Recommendation:** Assert the dashboard route or a stable element unique to the dashboard home, and retain the navigation/content checks as supporting authenticated-page evidence.
+
+**Proposed inline comment:** “Could this distinguish the account dashboard home from other My Account routes? The navigation and `woocommerce-MyAccount-content` container are shared by account subpages, so this can pass after a redirect to orders/edit-account rather than the AC 2.1 dashboard. Please assert the stable home URL or a dashboard-specific marker.”
+
+### 2. MEDIUM — The PR removes the only push/PR test workflow without a replacement
+
+**Location:** deleted `.github/workflows/selenium-login.yml`; the removal is acknowledged in `docs/sdlc/pr-description.md:12`
+**Confidence:** 8/10
+
+The base commit configured a `push`, `pull_request`, and manual workflow that ran required-mode Selenium tests and uploaded Surefire reports. This PR deletes it and adds no replacement, leaving future PRs and pushes without automated test execution. The former workflow has issues that should be corrected rather than restored verbatim: it enabled screenshot uploads and did not provide the newly required `LOGIN_EXPECTED_WELCOME` value. The PR documents CI absence but does not explain the loss of continuous verification or provide an alternative gate.
+
+**Recommendation:** Replace it with a supported workflow aligned with current policy (including the intended browser scope, every required secret, screenshots disabled unless explicitly approved, and safe report handling), or document an explicit project decision and replacement verification gate.
+
+**Proposed inline comment:** “This removes the repository's only `pull_request`/`push` test gate. Could we replace it with a corrected workflow rather than remove CI entirely? The old job needs the expected-welcome secret and should not enable screenshots by default, but deleting it means future changes have no automated Maven/browser check.”
+
+### 3. MEDIUM — The current implementation plan still marks completed implementation and verification as open
+
+**Location:** `docs/sdlc/impl-plan.md:34-37`
+**Confidence:** 10/10
+
+The current task table labels P4-02 and P4-03 “Open; Stage 5” although the current source implements both assertions and the latest verification report records their Chrome execution. It also labels P4-05 “Open; Stage 6” although the report records the required-mode command and all 24 tests passing, with the remaining AC 5.1 limitation accepted for Stage 7. These stale statuses conflict with the current handoff and can prompt unnecessary rework or misstate what remains. P4-04 may remain open as a source-requirement gap; the Stage 6 limitation acceptance must not be represented as satisfying AC 5.1.
+
+**Recommendation:** Reconcile the current task statuses and remaining work with the latest verification evidence, keeping superseded snapshots clearly historical and AC 5.1 explicitly unmet.
+
+**Proposed inline comment:** “Could the active task statuses be reconciled with the current source and Stage 6 report? P4-02/P4-03 are implemented, and P4-05's required-mode run is reported as 24/24 with the limitation accepted for Stage 7. Please keep AC 5.1 open/unmet as appropriate, but avoid presenting completed implementation and verification tasks as still open.”
+
+### 4. LOW — The committed PR description reports a closed PR and stale head
+
+**Location:** `docs/sdlc/pr-description.md:5-6`
+**Confidence:** 10/10
+
+The live PR is OPEN at head `181557cc778f4311dc742f7f9b0681ffc64a152c`, but the committed artifact says it was reopened at that SHA only in its later text while its original metadata still identifies the branch at `ce54d97acbd608c79c730b1b2e1d3c5f69af6393` and reports the PR CLOSED/not merged. Reviewers using the committed artifact receive contradictory PR state and snapshot information. The live PR body has already been reconciled; the committed artifact has not. A prior inline comment on this file also requested keeping the recorded head synchronized or omitting it.
+
+**Recommendation:** Update the committed artifact to the verified live OPEN state and current head, or omit mutable state/SHA fields and link to the live PR. Preserve the current local worktree edit; it is not part of this remote head.
+
+**Proposed inline comment:** “The live PR is OPEN at `181557c…`, but this committed metadata still describes the earlier `ce54d97…` snapshot and closed state. Please synchronize these fields with the live PR or omit mutable state/SHA details so reviewers do not treat this as the current PR snapshot.”
+
+## Stage 6 Evidence, Limitations, and Questions
+
+The latest authoritative `docs/sdlc/verification-report.md` records:
+
+- `mvn --batch-mode test -Dbrowser=chrome -Dheadless=true -DrequireCredentialTests=true`: **24 run, 24 passed, 0 failures, 0 errors, 0 skipped**, including 9 browser-driven `LoginPageTests` and 15 focused tests; Chrome 155.0.8059.40.
+- `mvn -q -DskipTests compile test-compile`: previously passed; this selects no tests.
+- Stage 6 verdict: **PASS WITH LIMITATIONS**, explicitly accepted by the user on 2026-10-14 for Stage 7 only. AC 5.1 remains unmet; Firefox/cross-browser, performance/reliability, and CI execution are unrun. Screenshot capture remained disabled.
+
+No tests, browser run, live-site check, CI job, security/dependency scan, or performance check was executed for this review. No CI workflow exists at the PR head because this diff deletes the base workflow. The source requirement comparison is limited to the committed requirements artifact; Confluence was not independently retrieved in this review. No secrets were inspected or included.
+
+## Publication Result
+
+The user explicitly approved publication of all four findings on 2026-10-14. Immediately before posting, GitHub reported PR #5 OPEN, not merged, at head `181557cc778f4311dc742f7f9b0681ffc64a152c`, based on `9a5383829fbd9bb2bbf2b327e54e8608d022896e`. GitHub accepted every write; no rejection was returned.
+
+| Finding | Publication record |
+| --- | --- |
+| Dashboard assertion accepts non-home account pages | Inline comment [#4271638116](https://github.com/guptarame/GithubCopilot_Capstone_Project/pull/5#discussion_r4271638116), `src/test/java/Github_Copilot/pages/LoginPage.java:72`. |
+| Deleted push/PR test workflow has no replacement | Inline comment [#4271705370](https://github.com/guptarame/GithubCopilot_Capstone_Project/pull/5#discussion_r4271705370), deleted `.github/workflows/selenium-login.yml`, left side line 5. |
+| Active plan statuses for P4-02/P4-03/P4-05 are stale; AC 5.1 remains unmet | Inline comment [#4271708374](https://github.com/guptarame/GithubCopilot_Capstone_Project/pull/5#discussion_r4271708374), `docs/sdlc/impl-plan.md:34`. The published wording explicitly keeps AC 5.1 open/unmet. |
+| Committed PR description state/head mismatch | Replied [#4271711243](https://github.com/guptarame/GithubCopilot_Capstone_Project/pull/5#discussion_r4271711243) to the existing unresolved thread [#4233371813](https://github.com/guptarame/GithubCopilot_Capstone_Project/pull/5#discussion_r4233371813); no duplicate thread was created. |
+
+The comments were published as `COMMENTED` review activity. The live review list contains no `APPROVED` or `CHANGES_REQUESTED` state from this publication. No merge, commit, or push was performed. This publication approval is not approval to merge.
+
+---
+
 # Stage 8 Code Review Report — PR #5
 
 **Current repository status (2026-10-14):** The current workspace has no

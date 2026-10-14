@@ -39,7 +39,8 @@ class LoginPageTests extends BaseTest {
                         loginPage.getDashboardText(), expectedWelcomeIdentity),
                 () -> assertTrue(loginPage.isLogoutVisible(), "Expected a visible logout control.")
         );
-        LoginScenarioAssertions.assertMyAccountDashboard(loginPage.isMyAccountDashboardVisible());
+        LoginScenarioAssertions.assertMyAccountDashboard(
+                loginPage.isMyAccountDashboardVisible(TestConfig.baseUrl()));
     }
 
     @Test

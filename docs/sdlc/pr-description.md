@@ -1,53 +1,59 @@
 # Pull Request Description
 
 **Title:** [Feature] Strengthen Selenium login automation and SDLC
-**Publication status:** Local draft only; not posted to GitHub.
-**Existing PR:** [#5](https://github.com/guptarame/GithubCopilot_Capstone_Project/pull/5) is **CLOSED and not merged** (checked 2026-10-14).
-**Base / head:** `master` at `9a5383829fbd9bb2bbf2b327e54e8608d022896e` / `feature/selenium-login-automation` at `ce54d97acbd608c79c730b1b2e1d3c5f69af6393` on `origin`.
-**Reviewers:** None requested.
-
-The current local changes are not present on that remote head. Updating or reopening PR #5 to describe them would misrepresent its diff; publishing the local changes would require a commit/push, which was not authorized. This file is therefore a prepared draft, not a live PR update.
+**Pull request:** [#5](https://github.com/guptarame/GithubCopilot_Capstone_Project/pull/5)
+The live PR link is authoritative for mutable state, base, head, and reviewer metadata.
 
 ## Summary
 
-Strengthens the Java 21 / Maven / Selenium login test framework and its SDLC documentation; the external login application is not modified. Framework updates include environment-only credential and expected-identity handling, required-mode credential guards, bounded configuration and browser waits, lifecycle/report outcome handling, and focused configuration, guard, assertion, and lifecycle tests. Login assertions now check the My Account dashboard destination and incorrect-password notice placement above the form, with feedback matching updated for the observed message form.
+Updates the Java 21 / Maven / Selenium login automation framework and its SDLC artifacts; the external login application is not modified. Framework changes strengthen successful-login destination and welcome checks, incorrect-password feedback placement, runtime-only credential handling, guards, configuration, lifecycle reporting, and focused tests. The commit also removes the prior workflow YAML and companion workflow-spec file. Against the current `master` base, the workflow YAML is the deletion in the PR diff; the companion Markdown file was not present at the base.
 
-The accompanying documentation refreshes the requirements, architecture, design review, implementation plan, verification record, and Copilot stage guidance. The prior workflow files are removed; **CI is not configured**. The separate workspace `.vscode/mcp.json` edit is local configuration and is not part of the proposed PR scope.
+The separate local `.vscode/mcp.json` modification is excluded. **No CI workflow is configured.**
 
 ## Requirements and Scope
 
-The framework covers login controls, success and failure outcomes, and recovery navigation as recorded in the current [requirements](requirements.md). Page objects own browser interactions, while configuration, guards, scenario assertions, driver lifecycle, and reporting remain in their existing framework boundaries.
+The framework covers the customer login requirements in [requirements.md](requirements.md). Page objects own browser interactions; configuration, credential guards, scenario assertions, driver lifecycle, and reporting retain their existing responsibilities.
 
-**AC 5.1 remains unmet.** The current blank-field checks exercise browser-native validation, not application-rendered inline errors required by the source criterion. The user's 2026-10-14 acceptance allows this documented `PASS WITH LIMITATIONS` result to proceed through Stage 7 only; it does not change the requirement or establish source compliance. This draft makes no unconditional source-compliance or overall feature-acceptance claim.
+**AC 5.1 remains unmet.** Blank-field tests exercise browser-native validation, not the application-rendered inline errors required by the source criterion. The user's fresh 2026-10-14 acceptance of the Stage 6 **PASS WITH LIMITATIONS** permits Stage 7 progression only; it does not change AC 5.1 or establish source compliance. No unconditional source-compliance or overall feature-acceptance claim is made.
 
 ## Verification Evidence
 
-Evidence is from the latest authoritative [Stage 6 verification report](verification-report.md), dated 2026-10-14. Verdict: **PASS WITH LIMITATIONS**, explicitly accepted by the user on 2026-10-14 for Stage 7.
+The latest authoritative [Stage 6 verification report](verification-report.md), dated 2026-10-14, records **PASS WITH LIMITATIONS** and explicit human acceptance on 2026-10-14 for Stage 7. The latest run includes the strengthened dashboard-home URL check.
 
-- `mvn --batch-mode test -Dbrowser=chrome -Dheadless=true -DrequireCredentialTests=true`: **24 run, 24 passed, 0 failures, 0 errors, 0 skipped**. This includes 9 `LoginPageTests` browser scenarios and 15 focused browser-independent tests. The run used Chrome 155.0.8059.40.
-- `mvn -q -DskipTests compile test-compile`: previously completed successfully; no tests were selected by this command.
-- No tests were rerun for Stage 7 or while preparing this draft.
+- Required-mode command `mvn --batch-mode test -Dbrowser=chrome -Dheadless=true -DrequireCredentialTests=true`: **27 run, 27 passed, 0 failures, 0 errors, 0 skipped**. This includes 9 browser scenarios and 18 focused browser-independent tests, executed with Chrome 155.0.8059.40; the refined dashboard-home URL check was exercised.
+- Stage 5 focused command `mvn -q "-Dtest=LoginPageUrlTests,TestConfigTests,CredentialTestGuardTests,LoginScenarioAssertionsTests,TestLifecycleTests" test`: **18 run, 18 passed, 0 failures, 0 errors, 0 skipped**.
+- Stage 5 compile command `mvn -q -DskipTests compile test-compile`: passed; no tests selected.
 
-The report records that required runtime values were supplied through masked prompts and cleared by the invoking script; no credentials or account identity values are included here. AC 5.1 remains unmet despite the passing executed tests.
+The verification report records that required runtime values were supplied through masked prompts and cleared by the invoking script. No credential or account-identity values are included in this artifact or the PR description.
 
 ## Limitations
 
-- AC 5.1 / FR-2 remains unmet because native browser validation is not application-rendered inline feedback for both required fields. Follow-up is to implement and observe the source-required behavior or obtain an authorized requirements change.
-- Firefox and cross-browser coverage are unrun. No CI workflow or CI execution is present.
+- AC 5.1 / FR-2 is unmet because browser-native validation is not application-rendered inline feedback for both required fields. Follow-up is to implement and observe the source-required behavior or obtain an authorized requirements change.
+- Firefox and cross-browser coverage are unrun. CI is not configured and no CI execution is claimed.
 - Performance, slow-network, repeatability/reliability, and screenshot capture are unverified; screenshot capture remained disabled.
 - Recovery evidence is limited to navigation and visible form checks, not password-reset submission or completion.
 - Passing tests do not establish source compliance or unconditional US-AUTH-002 acceptance.
 
+## Verification Gate (No CI)
+
+The prior push/pull-request workflow was deleted in this PR. Adding a replacement CI workflow is outside the approved scope; consequently, pushes and pull requests have no automated test gate. The replacement gate for this PR is a **manual Stage 6 required-mode Chrome run**, now completed with 27/27 passing tests and the AC 5.1 limitation:
+
+```text
+mvn --batch-mode test -Dbrowser=chrome -Dheadless=true -DrequireCredentialTests=true
+```
+
+The run used runtime values supplied through masked prompts and cleared afterward. The 27/27 result is PASS WITH LIMITATIONS, not source-compliant PASS, because AC 5.1 remains unmet. The prior human acceptance applies to this same limitation. Do not put runtime values in commands, logs, or reports; skips are not passes.
+
 ## Reviewer Checklist
 
-- [ ] Review the full proposed diff against `master`, including the local changes not yet on the remote branch.
+- [ ] Review the PR diff against the stated `master` base and commit.
 - [ ] Confirm environment-only credentials and expected identity, required-mode guards, and privacy-safe diagnostics.
-- [ ] Review AC 2.1 dashboard destination and AC 3.1 notice-position assertions and their browser-independent helper coverage.
-- [ ] Keep AC 5.1's source inline-error requirement distinct from browser-native validation; do not claim it is met.
-- [ ] Confirm the current Stage 6 pass counts and limitation against the verification report; treat Firefox and CI as unrun/not configured.
-- [ ] Review removal of the prior workflow files and ensure no CI behavior is claimed.
-- [ ] Keep screenshot capture disabled unless page-level data and artifact handling have been reviewed.
+- [ ] Review AC 2.1 destination URL matching, account-subpage rejection tests, and AC 3.1 notice-position assertion.
+- [ ] Keep AC 5.1's source inline-error criterion distinct from browser-native validation; do not claim it is met.
+- [ ] Confirm Stage 6 counts and limitations against the verification report; treat Firefox as unrun and CI as not configured.
+- [ ] Confirm no CI is described as configured; require the manual required-mode Chrome gate before PR update/re-review.
+- [ ] Keep screenshot capture disabled unless page-level data and artifact handling are reviewed.
 
 ## Current PR State and Next Gate
 
-GitHub reports PR #5 as **CLOSED**, not merged, with base `master` and the remote head shown above. The branch is aligned with `origin`; the worktree contains staged and unstaged changes beyond that head. No new PR was created and no live PR was updated. To make this proposed diff reviewable on GitHub, the changes must first be made available on a remote branch through separately authorized commit/push actions. Stage 8 and review-comment publication have not been performed.
+Use the live PR link above for current state and revision; this artifact intentionally omits mutable state/head metadata. This local draft is not committed, pushed, or published to the PR body. Stage 6 passed with limitations after the dashboard-route refinement; the next steps are a PR update and re-review. Do not merge.

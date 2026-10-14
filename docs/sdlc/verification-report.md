@@ -1,46 +1,51 @@
 ﻿# Stage 6 Verification Report
 
-## Latest Authoritative Stage 6 Required-Mode Chrome Rerun — 2026-10-14
+## Latest Authoritative Stage 6 Required-Mode Chrome Rerun - 2026-10-14
 
 This is the latest authoritative Stage 6 execution record. It supersedes the
-older execution statuses below, which are retained as history. This run was
-completed after the invalid-password feedback-token fix and verifies the
-updated behavior in Chrome.
+older execution statuses below, which are retained as history. This required-
+mode rerun was completed after the Stage 5 PR-review fix that tightened
+dashboard-home URL matching and added focused URL tests. The route check is now
+live-verified in Chrome.
 
 ### Metadata and Verdict
 
 | Item | Observed result |
 | --- | --- |
-| Scope | Required-mode, headless Chrome run of the full Maven test suite, including all nine login browser scenarios and 15 focused browser-independent tests. |
+| Scope | Required-mode, headless Chrome run of the full Maven test suite: nine login browser scenarios, three dashboard-home URL tests, and 15 other focused browser-independent tests. |
 | Environment | Windows; Chrome 155.0.8059.40. |
-| Runtime inputs | Required values were supplied through masked runtime prompts and cleared by the invoking script. No credential or account identity values are included or inferred in this report. |
-| Selenium diagnostic | Selenium reported no CDP implementation matching Chrome 155. The test run completed successfully; the warning did not result in a test failure. |
+| Runtime inputs | The user reports that the invoking script supplied required runtime values through masked prompts and cleared them. No credential or account identity values were read, recorded, or inferred in this report. |
+| Surefire evidence | **27 run, 27 passed, 0 failures, 0 errors, 0 skipped.** `LoginPageTests.txt` reports 9 run, 9 passed, 0 failures/errors/skips in 40.83 seconds. |
 | Screenshots | Screenshot capture remained disabled; no capture was indicated. |
-| Verdict | **PASS WITH LIMITATIONS.** Surefire reported **24 run, 24 passed, 0 failures, 0 errors, 0 skipped**. Source AC 5.1 remains unmet, so source compliance and end-to-end source acceptance are not demonstrated. The user explicitly accepted this Stage 6 limitation on 2026-10-14 for Stage 7 progression only. |
+| Verdict | **PASS WITH LIMITATIONS.** Every executed check passed with zero failures, errors, or skips. Source AC 5.1 remains unmet because tests exercise browser-native validation rather than application-rendered inline errors; source compliance and unconditional acceptance are therefore not demonstrated. The prior explicit human acceptance for Stage 7 covered this same AC 5.1 limitation. |
 
 The executed tests all passed, including TS-LOG-002 feedback matching and
-TS-LOG-001's configured-welcome and destination assertions. AC 5.1 remains a
-separate source-requirement gap: the passing blank/invalid-field tests verify
+TS-LOG-001's configured-welcome and destination assertions. The strengthened
+dashboard-home URL matching was exercised by the live successful-login
+scenario; the three `LoginPageUrlTests` also passed. AC 5.1 remains a separate
+source-requirement gap: the passing blank/invalid-field tests verify
 browser-native validation, not required application-rendered inline errors.
 
 ### Commands and Results
 
 | Exact command / check | Observed result |
 | --- | --- |
-| `mvn --batch-mode test -Dbrowser=chrome -Dheadless=true -DrequireCredentialTests=true` | **BUILD SUCCESS** on Chrome 155.0.8059.40. Surefire: **24 run, 24 passed, 0 failures, 0 errors, 0 skipped**. |
-| Full-run compilation | Maven reported sources up to date. |
-| `mvn -q -DskipTests compile test-compile` | Previously completed successfully; main and test compilation passed. No tests selected. |
+| `mvn --batch-mode test -Dbrowser=chrome -Dheadless=true -DrequireCredentialTests=true` | **BUILD SUCCESS** on Chrome 155.0.8059.40; the user reports all scenario lines passed. Surefire: **27 run, 27 passed, 0 failures, 0 errors, 0 skipped**. |
+| Fresh Surefire XML summary | `LoginPageTests` 9/9; `LoginPageUrlTests` 3/3; `TestConfigTests` 6/6; `TestLifecycleTests` 1/1; `CredentialTestGuardTests` 4/4; `LoginScenarioAssertionsTests` 4/4. Total **27/27 passed**. |
+| `LoginPageTests.txt` | 9 run, 9 passed, 0 failures, 0 errors, 0 skipped; elapsed time **40.83 seconds**. |
 
-The full Surefire total comprises `LoginPageTests` (**9 passed**) and the
-focused classes `TestConfigTests` (6), `TestLifecycleTests` (1),
-`CredentialTestGuardTests` (4), and `LoginScenarioAssertionsTests` (4), for
-**15 focused tests passed**.
+The full Surefire total comprises `LoginPageTests` (9), `LoginPageUrlTests`
+(3), `TestConfigTests` (6), `TestLifecycleTests` (1),
+`CredentialTestGuardTests` (4), and `LoginScenarioAssertionsTests` (4). The
+three URL tests and 15 other focused tests all passed. The full run includes
+Maven compilation/test compilation; no separate compile-only command is
+reported for this run.
 
 ### Requirements and Scenario Traceability
 
 | Requirement / scenario | Latest evidence and disposition |
 | AC 1.1-1.4 / FR-1: controls and recovery navigation | **Pass in Chrome.** Required controls and password-recovery navigation/form checks passed. |
-| AC 2.1-2.2 / TS-LOG-001: dashboard destination and welcome | **Pass in Chrome.** Authentication, configured welcome identity, My Account destination, and logout assertions passed. |
+| AC 2.1-2.2 / TS-LOG-001: dashboard destination and welcome | **Pass in Chrome.** Authentication, configured welcome identity, strengthened configured dashboard-home URL origin/path matching, visible account content, and logout assertions passed. The refined route assertion is live-verified in this run. |
 | AC 3.1 / TS-LOG-002: invalid-password feedback and notice position | **Pass in Chrome.** Updated feedback-token matching and notice-above-form assertion passed. |
 | TS-LOG-003 / AC 4.1: unknown user | **Pass in Chrome.** |
 | TS-LOG-004: blank fields | **Pass in Chrome** for implemented browser-native required-field validation. This does not fulfill AC 5.1. |
@@ -49,15 +54,19 @@ focused classes `TestConfigTests` (6), `TestLifecycleTests` (1),
 | TS-LOG-007 and TS-LOG-008: invalid-field scenarios | **Pass in Chrome** for implemented browser-native validation checks. This does not fulfill AC 5.1. |
 | AC-UI-001: required controls | **Pass in Chrome.** |
 | AC 5.1 / FR-2 / TS-LOG-004: application-rendered inline errors for both blank fields | **Unmet source criterion.** Passing tests establish browser-native validation only; application-rendered inline errors were not observed or verified. |
-| Framework focused coverage | **15/15 passed** across configuration (6), lifecycle (1), credential guard (4), and scenario assertions (4). |
+| P4-02 dashboard-home destination assertion | **Implemented and live-verified.** The successful-login Chrome scenario passed the strengthened configured origin/path check plus account-content assertion; all three `LoginPageUrlTests` passed. |
+| P4-04 / AC 5.1 source criterion | **OPEN; unmet.** Tests verify browser-native required-field validation, not application-rendered inline errors for both fields. |
+| P4-05 required-mode Stage 6 verification | **Complete: PASS WITH LIMITATIONS.** Required-mode Chrome suite passed 27/27 with zero failures, errors, and skips; AC 5.1 remains unmet. |
+| Framework focused coverage | **18/18 passed** across dashboard URL matching (3), configuration (6), lifecycle (1), credential guard (4), and scenario assertions (4). |
 
 ### Framework, Limits, and Gate
 
 Chrome exercised all nine browser scenarios in headless required mode. The
-configured welcome, successful-login destination, invalid-password feedback,
-Remember Me restart, recovery navigation, and required controls passed. The
-CDP diagnostic is recorded as a warning only; all assertions completed and
-passed. Screenshots remained disabled and no screenshot capture was indicated.
+configured welcome, strengthened successful-login destination URL, invalid-
+password feedback, Remember Me restart, recovery navigation, and required
+controls passed. No CDP warning information was included in the latest run
+summary; prior CDP warnings are historical and are not attributed to this run.
+Screenshots remained disabled and no screenshot capture was indicated.
 
 No performance, slow-network, repeatability/duration, or reliability
 measurements were supplied by this run. Firefox and cross-browser coverage
@@ -72,13 +81,12 @@ verify browser-native validation instead.
 - **Follow-up:** Implement and observe application-rendered inline errors for
   the required/invalid fields, or obtain an authorized requirements change.
   Do not describe browser-native validation as satisfying AC 5.1.
-- **Stage 6 acceptance:** On 2026-10-14, the user explicitly stated **"yes
-	accept"** in response to the current **PASS WITH LIMITATIONS** result,
-	including the unmet AC 5.1 source criterion. This acceptance permits Stage 7
-	only. It does not relabel AC 5.1 as met, change the verdict, establish source
-	compliance, or authorize Stage 8 or review publication.
-- **Next stage:** Stage 7 may proceed under its existing authorization.
-	Preserve the limitation and all verification classifications in PR materials.
+- **Stage 7 acceptance:** The prior explicit human acceptance applied to Stage 7
+  with this same AC 5.1 limitation. It does not relabel AC 5.1 as met, change
+  this verdict, establish source compliance, or authorize review publication.
+- **Next action:** Commit/push the current local review fixes only after separate
+  authorization, then update the PR and request re-review. This verification
+  task does not commit, push, or publish a review.
 
 ---
 

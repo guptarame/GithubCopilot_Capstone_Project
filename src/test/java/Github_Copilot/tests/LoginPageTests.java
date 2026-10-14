@@ -39,6 +39,7 @@ class LoginPageTests extends BaseTest {
                         loginPage.getDashboardText(), expectedWelcomeIdentity),
                 () -> assertTrue(loginPage.isLogoutVisible(), "Expected a visible logout control.")
         );
+        LoginScenarioAssertions.assertMyAccountDashboard(loginPage.isMyAccountDashboardVisible());
     }
 
     @Test
@@ -56,7 +57,8 @@ class LoginPageTests extends BaseTest {
                 .toLowerCase();
 
         LoginScenarioAssertions.assertInvalidPasswordOutcome(
-                message, loginPage.isLoggedIn(), loginPage.isLoginFormVisible());
+                message, loginPage.isLoggedIn(), loginPage.isLoginFormVisible(),
+                loginPage.isErrorNoticeAtTopOfLoginForm());
     }
 
     @Test

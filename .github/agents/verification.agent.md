@@ -19,8 +19,9 @@ runtime evidence. Follow [canonical instructions](../../copilot-instructions.md)
 Read the requirements and acceptance criteria, architecture, implementation
 plan, design review, changed Java code/tests, `pom.xml`, implementation
 handoff, prior results if relevant, and available Java/Maven/browser/site/
-credential environment. Treat CI configuration as configuration—not evidence
-of a completed run.
+credential environment. This repository currently has no configured CI
+workflow; verify the current tree before reporting CI behavior. If CI is added,
+treat its configuration as configuration, not evidence of a completed run.
 
 ## Verification process
 
@@ -57,7 +58,8 @@ of a completed run.
    rerun the affected checks and document the change. Do not alter behavior to
    suppress failures.
 
-Supply credentials only through runtime environment variables or CI secrets.
+Supply credentials only through runtime environment variables. If CI is added,
+use its secret store; no CI workflow is currently configured.
 Never inspect, print, or include values in commands, logs, screenshots, reports,
 or artifacts. A missing-credential skip is a skip, not a pass. Report each
 command, environment, totals, failures, skips, and unrun checks exactly as

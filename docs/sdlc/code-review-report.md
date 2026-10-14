@@ -1,16 +1,21 @@
 # Stage 8 Code Review Report — PR #5
 
-- **Date:** 2026-10-09
+**Current repository status (2026-10-14):** The current workspace has no
+`.github/workflows/` directory or configured CI workflow. This report records
+the PR #5 snapshot reviewed on 2026-10-10; workflow references and CI-matrix
+observations below describe that historical PR snapshot, not the current tree.
+
+- **Date:** 2026-10-10
 - **Repository:** `guptarame/GithubCopilot_Capstone_Project`
 - **PR:** [#5 - Strengthen Selenium login automation and SDLC](https://github.com/guptarame/GithubCopilot_Capstone_Project/pull/5)
 - **State:** OPEN
 - **Base:** `master` at `9a5383829fbd9bb2bbf2b327e54e8608d022896e`
-- **Head:** `feature/selenium-login-automation` at `8f2f62c9fb43541ed6836575765a37bf93a6ee50`
-- **Verdict:** APPROVED WITH MINOR ISSUES
+- **Head:** `feature/selenium-login-automation` at `ce54d97acbd608c79c730b1b2e1d3c5f69af6393`
+- **Verdict:** APPROVED
 
 ## Scope and Evidence
 
-The live PR number, repository, open state, base, and head were verified with GitHub. Remote refs were refreshed; `origin/master` is the PR base and local `HEAD` matches the live PR head. The complete three-dot diff against that base contains 52 paths, 2,822 additions, and 1,918 deletions. The head contains implementation commit `064ce4210f92ce5d967854364909a2a532ed3b28` followed by description-synchronization commit `8f2f62c9fb43541ed6836575765a37bf93a6ee50`.
+The live PR number, repository, open state, base, and head were verified with GitHub. The current head is `ce54d97acbd608c79c730b1b2e1d3c5f69af6393`. The preceding Stage 8 review covered the complete three-dot diff against the base (52 paths, 2,822 additions, and 1,918 deletions) at `8f2f62c9fb43541ed6836575765a37bf93a6ee50`. This refresh reviewed the latest commit in that full-PR context; `ce54d97acbd608c79c730b1b2e1d3c5f69af6393` changes only `docs/sdlc/pr-description.md`, replacing the pinned implementation SHA with a reference to the live PR's current commit. The earlier commits include implementation commit `064ce4210f92ce5d967854364909a2a532ed3b28` and description-synchronization commit `8f2f62c9fb43541ed6836575765a37bf93a6ee50`.
 
 The review used committed content at that PR head only. The pre-existing `.vscode/mcp.json` worktree modification was excluded and preserved. After explicit user approval, one inline comment for finding 1 was published. The PR remains open; no formal approval, request-changes review, or merge was submitted by the reviewer.
 
@@ -25,31 +30,29 @@ Relevant unchanged context reviewed: `pom.xml`, `src/test/java/Github_Copilot/ba
 
 ## Review Summary
 
-One LOW finding concerns an inaccurate head SHA in the committed PR description and live PR body. No actionable defect was found in the reviewed credential handling, invalid-password assertions, Remember Me assertion helper, Chrome-only verification procedure, skip policy, or FR-2 source/deviation labeling.
+The preceding review identified one LOW finding for an inaccurate head SHA; the latest commit resolves it. No current actionable finding remains in the reviewed PR context. No actionable defect was found in credential handling, invalid-password assertions, the Remember Me assertion helper, Chrome-only verification procedure, skip policy, or FR-2 source/deviation labeling.
 
 | Review area | Assessment |
 | --- | --- |
 | Credentials | Valid username, password, and expected identity are read only from environment variables. Missing values fail in required mode or abort in optional mode; diagnostics do not include the values. Focused tests cover configuration and guard behavior. |
 | Invalid password | TS-LOG-002 now asserts accepted error feedback, unauthenticated state, and retained login form. Its assertion helper has focused negative/positive unit coverage. The live scenario was skipped, so target-site rejection behavior remains unverified. |
 | Remember Me | The post-restart helper requires nonblank dashboard content and a visible logout control, and focused tests cover missing signals. TS-LOG-005 was skipped before login; persistence was not observed. |
-| Browser policy | Verification assets specify Chrome only and explicitly leave Firefox/cross-browser unrun. CI retains its existing Chrome/Firefox matrix; no Firefox execution is claimed. |
+| Browser policy | Verification assets specify Chrome only and explicitly leave Firefox/cross-browser unrun. The reviewed PR snapshot contained a Chrome/Firefox CI matrix, but the current repository has no configured CI workflow; no Firefox execution is claimed. |
 | PASS WITH LIMITATIONS and skips | Agent, skill, orchestrator, verification report, and PR description distinguish skips from passes, enumerate reason/impact/follow-up, and require explicit acceptance. The current Stage 6 limitations were accepted for Stage 7, not converted into passes. |
 | FR-2 | Source requirement remains application-rendered inline errors. Browser-native validation is described only as the accepted project deviation; the source criterion remains unmet. |
-| PR description accuracy | The base SHA is current, but the head SHA is stale; see finding 1. Other reported Stage 6 counts and limitations agree with the committed verification report. |
+| PR description accuracy | The stale pinned head SHA was removed in the latest commit. The description now points readers to the live PR for the current commit; its Stage 6 counts and limitations agree with the committed verification report. |
 
 ## Findings
 
-### 1. LOW - PR description records an outdated head SHA
+No current actionable findings.
 
-**Location:** `docs/sdlc/pr-description.md:7`
+### Previously reported finding 1 - RESOLVED: PR description recorded an outdated head SHA
 
-**Confidence:** 10/10
+**Location:** `docs/sdlc/pr-description.md:7` (current PR head)
 
-The PR description and live PR body identify `064ce4210f92ce5d967854364909a2a532ed3b28` as the head, but GitHub reports the current head as `8f2f62c9fb43541ed6836575765a37bf93a6ee50`. The former is an ancestor implementation commit, not the current PR snapshot. This makes the recorded PR metadata inaccurate and may cause readers to review or reproduce the wrong revision.
+The latest commit replaces the pinned ancestor SHA with “see the live PR for the current commit.” GitHub confirms the PR is open at `ce54d97acbd608c79c730b1b2e1d3c5f69af6393`, and the live PR body contains the same non-stale reference. The accuracy defect is fixed. The previously published inline comment remains on the PR; this refresh did not add comments or resolve the thread.
 
-**Recommendation:** Update the recorded head SHA whenever the PR description is synchronized; use the verified PR head rather than the implementation commit SHA.
-
-**Published inline comment:** [View on PR #5](https://github.com/guptarame/GithubCopilot_Capstone_Project/pull/5#discussion_r4233371813) — “This records the implementation commit, but the live PR head is now `8f2f62c9fb43541ed6836575765a37bf93a6ee50`. Please keep this field synchronized with the actual PR head so the description identifies the reviewed snapshot.”
+**Prior published inline comment:** [View on PR #5](https://github.com/guptarame/GithubCopilot_Capstone_Project/pull/5#discussion_r4233371813). No additional comment was proposed or published.
 
 ## Validation and Limitations
 
@@ -59,9 +62,9 @@ No tests, browser runs, live-site checks, CI jobs, security scans, or dependency
 - Focused tests: reported 14 passed, 0 failed, 0 errors, 0 skipped.
 - Chrome `LoginPageTests`: reported 9 run, 6 passed, 0 failed, 0 errors, 3 skipped: TS-LOG-001, TS-LOG-002, TS-LOG-005. No Firefox run is claimed.
 - The Stage 6 verdict is PASS WITH LIMITATIONS. FR-2 source inline-error behavior, valid login/identity, live invalid-password rejection, and Remember Me persistence remain unmet or unverified as documented. The user accepted the stated limitations for Stage 7; this review does not treat that acceptance as test evidence.
-- No PR #5 review discussion existed when checked. The PR #4 findings and publication history below are historical and are not PR #5 findings unless independently identified in the current-diff assessment above.
+- At the preceding review, no PR #5 discussion existed; one inline comment was subsequently published for finding 1. The PR #4 findings and publication history below are historical and are not PR #5 findings unless independently identified in the current-diff assessment above.
 
-**Publication status:** The user explicitly approved publication of this one LOW finding. GitHub accepted it as an inline comment in a `COMMENTED` review. No formal APPROVE or REQUEST_CHANGES review was submitted, and no merge decision is implied.
+**Publication status:** The user previously approved publication of the LOW finding, which GitHub accepted as an inline comment in a `COMMENTED` review. This refresh made no GitHub writes: no additional comment, formal APPROVE or REQUEST_CHANGES review, thread resolution, or merge action. The report verdict is not a GitHub approval.
 
 ---
 

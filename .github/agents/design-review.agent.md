@@ -13,8 +13,9 @@ Own the Stage 3 independent review of the proposed framework architecture.
 Review the test automation design, not the external login application.
 
 Read `docs/sdlc/requirements.md`, `docs/sdlc/architecture.md`, relevant
-existing Java tests/framework code, `pom.xml`, test resources, and applicable
-CI configuration. Follow [canonical instructions](../../copilot-instructions.md),
+existing Java tests/framework code, `pom.xml`, test resources, and CI
+configuration if present. This repository currently has no configured CI
+workflow. Follow [canonical instructions](../../copilot-instructions.md),
 [repository context](../copilot-instructions.md), and the
 [orchestrator](sdlc_orchestrator.agent.md). CI configuration and historical
 reports are not proof that tests or browsers were run.
@@ -31,7 +32,8 @@ design. Review:
   teardown.
 - Credential and sensitive-data handling, logging, screenshots, reports, and
   artifact safety.
-- Chrome/Firefox and headless design, Maven/Surefire and CI integration,
+- Chrome/Firefox and headless design, Maven/Surefire and CI integration when
+  configured (currently absent),
   dependency necessity/safety, maintainability, extensibility, performance
   assumptions, slow-network behavior, and scalability boundaries.
 - Design omissions, contradictory requirements, unsupported environmental

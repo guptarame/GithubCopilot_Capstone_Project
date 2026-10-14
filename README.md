@@ -9,8 +9,10 @@ This project implements the full capstone SDLC artifacts and a Selenium Java Mav
 - Chrome (default) or Firefox installed locally
 
 ## Credentials
-Valid credentials are read only from runtime environment variables or CI
-secrets. They are never accepted as Java system properties and must not be
+Valid credentials are read only from runtime environment variables. This
+repository currently has no configured CI workflow; if CI is added later,
+credentials must be supplied through its secret store. They are never accepted
+as Java system properties and must not be
 placed in source, command-line arguments, logs, screenshots, or committed
 files.
 
@@ -20,16 +22,16 @@ files.
 
 Credential-dependent tests skip during optional local runs when their required
 credentials are missing. The valid-login scenario also requires the expected
-welcome identity. Set `REQUIRE_CREDENTIAL_TESTS=true` in CI to make any missing
-prerequisite fail visibly. The identity is read only from the runtime
-environment or a CI secret and is compared in memory; never print it or include
+welcome identity. Set `REQUIRE_CREDENTIAL_TESTS=true` in the test process to
+make any missing prerequisite fail visibly. The identity is read only from the
+runtime environment and is compared in memory; never print it or include
 it in source, assertion messages, reports, or screenshots.
 
 - `LOGIN_INVALID_PASSWORD` (optional, default is `invalid-password`)
 - `LOGIN_UNKNOWN_USERNAME` (optional)
 
-Failure screenshots are disabled by default. CI does not enable capture until
-page-level account data has been reviewed and shown safe for artifact storage.
+Failure screenshots are disabled by default. No CI workflow or artifact upload
+is configured in this repository.
 
 ## Run Tests
 ```powershell
@@ -63,7 +65,6 @@ definitions remain in `.github/agents`, where GitHub Copilot discovers them.
   rules/      Concise project rules
   skills/     Reusable task recipes
   subagents/  SDLC delegation index
-  workflows/  GitHub Actions and workflow documentation
 .vscode/      Workspace MCP server configuration
 templates/    Reserved shared templates
 copilot-instructions.md
@@ -71,3 +72,8 @@ copilot-instructions.md
 
 Start with [repository instructions](copilot-instructions.md), then use the
 [framework index](.github/copilot-instructions.md) for the relevant surface.
+
+There is currently no `.github/workflows/` directory, GitHub Actions workflow,
+or configured CI job in this repository. Tests are run with Maven as described
+above; historical SDLC reports may refer to workflow files that are no longer
+present.

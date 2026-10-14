@@ -17,13 +17,15 @@ Read:
 
 - Approved `docs/sdlc/requirements.md`.
 - Existing tests and relevant `src/test/java/Github_Copilot/` framework code.
-- `pom.xml`, test resources, and applicable CI configuration.
+- `pom.xml`, test resources, and CI configuration if present. This repository
+  currently has no configured CI workflow.
 - The
   [canonical instructions](../../copilot-instructions.md),
   [repository context](../copilot-instructions.md), and
   [orchestrator](sdlc_orchestrator.agent.md).
 
-Treat workflow files as configuration, not evidence of a successful run. The
+Treat workflow files as configuration, not evidence of a successful run; do
+not claim CI behavior unless configuration exists and was inspected. The
 pre-commit document is a proposed specification, not an installed hook.
 
 ## Responsibilities
@@ -37,7 +39,8 @@ pre-commit document is a proposed specification, not an installed hook.
    from Maven/JUnit startup through teardown and reporting.
 4. Cover WebDriver lifecycle/browser management, Page Objects, explicit waits,
    configuration and test data, failure handling, logging, optional screenshots,
-   listeners, reports, cleanup, and Maven/CI execution.
+  listeners, reports, cleanup, and Maven execution. Describe CI only if
+  configuration is present; currently no CI workflow is configured.
 5. Explain non-secret configuration precedence (nonblank Java system property,
    then environment variable, then default), environment-only valid
    credentials, HTTPS requirements and explicit local HTTP opt-in.

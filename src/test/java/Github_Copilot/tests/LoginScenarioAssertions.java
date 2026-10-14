@@ -13,13 +13,20 @@ final class LoginScenarioAssertions {
     private LoginScenarioAssertions() {
     }
 
-    static void assertInvalidPasswordOutcome(String message, boolean loggedIn, boolean loginFormVisible) {
+    static void assertInvalidPasswordOutcome(
+            String message, boolean loggedIn, boolean loginFormVisible, boolean errorAtTopOfForm) {
         assertTrue(containsAny(message.toLowerCase(), TestData.INVALID_PASSWORD_MESSAGE_TOKENS),
                 "Expected an incorrect-password style error message.");
         assertAll(
                 () -> assertFalse(loggedIn, "Invalid login must not authenticate the user."),
-                () -> assertTrue(loginFormVisible, "Invalid login should remain on the login page.")
+                () -> assertTrue(loginFormVisible, "Invalid login should remain on the login page."),
+                () -> assertTrue(errorAtTopOfForm,
+                        "Expected the incorrect-password notice above the login form.")
         );
+    }
+
+    static void assertMyAccountDashboard(boolean dashboardVisible) {
+        assertTrue(dashboardVisible, "Expected the authenticated destination to be the My Account dashboard.");
     }
 
     static void assertCustomerIdentifyingWelcome(String dashboardText, String expectedIdentity) {

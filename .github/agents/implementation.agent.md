@@ -20,8 +20,9 @@ Follow [canonical instructions](../../copilot-instructions.md),
 
 - Approved `docs/sdlc/impl-plan.md`, architecture, requirements, and design
   review, including all conditions and accepted deviations.
-- Relevant existing Java code/tests, `pom.xml`, resources, and workflow
-  configuration.
+- Relevant existing Java code/tests, `pom.xml`, resources, and CI
+  configuration if present. This repository currently has no configured
+  workflow.
 
 ## Workflow and scope
 
@@ -72,12 +73,13 @@ already complete, cover the following existing project concerns:
   URL transport, and positive finite timeouts. Non-secret settings follow
   nonblank Java system property → environment variable → default.
 - Valid credentials come only from `LOGIN_VALID_USERNAME` and
-  `LOGIN_VALID_PASSWORD` in the runtime environment or configured CI secrets.
+  `LOGIN_VALID_PASSWORD` in the runtime environment. If CI is configured in
+  the future, use its secret store; no CI workflow currently exists.
   Never hardcode, echo, pass values on a command line, or expose them in logs,
   screenshots, reports, examples, or committed artifacts.
-- Credential-dependent local tests may skip when credentials are absent in
-  optional mode; required CI mode must fail visibly. Do not count skips as
-  passes.
+- Credential-dependent tests may skip when credentials are absent in optional
+  mode; required mode must fail visibly. Set required mode in the test process
+  as needed. Do not count skips as passes.
 - Require HTTPS except explicitly opted-in local HTTP. Screenshot capture stays
   off by default; redacting form fields does not prove other page content is
   safe. Do not mask an original failure with reporting/cleanup errors.
@@ -98,8 +100,9 @@ Run browser-driven login scenarios only in Chrome and only when the target site
 and required runtime configuration are available. Record exact commands and
 observed pass/fail/skip/unrun counts. Clearly state anything not exercised,
 including Firefox/cross-browser, live-site, Remember Me persistence,
-slow-network, performance, and reliability claims. Workflow configuration is
-not evidence of successful execution.
+slow-network, performance, and reliability claims. No CI workflow is currently
+configured. If one is added, configuration is not evidence of successful
+execution.
 
 Hand Stage 6 the changed files/tasks, criteria satisfied or incomplete,
 validation commands and observed results, risks/limitations/deviations, and

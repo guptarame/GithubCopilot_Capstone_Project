@@ -1,4 +1,115 @@
-# Fresh Stage 3 Design Review — Restarted SDLC (2026-10-09)
+# Stage 3 Design Review — Fresh Architecture Review (2026-10-14)
+
+## Review Metadata
+
+| Item | Value |
+| --- | --- |
+| Stage | SDLC Stage 3: Independent Design Review |
+| Reviewed | 2026-10-14 |
+| Reviewer | Design Review Agent |
+| Approved input | [Architecture proposal](architecture.md), explicitly approved by the user with “yes” on 2026-10-14; this authorizes this review only. |
+| Requirements basis | Current [requirements artifact](requirements.md), whose source basis is the authenticated rendered Confluence page 11796481. This review did not independently retrieve Confluence. |
+| Scope | Selenium automation framework only. No external application, source code, tests, credentials, or CI configuration changed. |
+| Method | Static review of requirements, architecture, current Java framework/tests, Maven configuration, README, current Stage 4/6 artifacts, and the existing review. No tests, browser, live-site, network, CI, dependency-scan, or performance check was run for this review. |
+| Worktree | Existing review content was inspected and retained below as dated history. Git status/diff was unavailable through the tools in this session, so other pending worktree changes could not be independently enumerated. |
+
+## Executive Summary
+
+**Verdict: APPROVED WITH CONDITIONS.** The architecture's component boundaries, local sequential Selenium design, environment-only secrets, bounded waits, failure/skip distinction, and explicit evidence limits fit the existing framework. It correctly treats TS-LOG-001 through TS-LOG-004 as the complete source scenario set and identifies the implementation-only tests as supplementary. No new dependency, CI workflow, browser, or framework rewrite is justified.
+
+This is not approval to proceed automatically. Source AC 5.1 requires application-rendered inline errors, while TS-LOG-004 currently tests browser-native validation; the former remains unmet and must never be represented as satisfied by the latter. The design also identifies, but does not yet close, the missing explicit dashboard-destination assertion for AC 2.1 and top-of-form error-position assertion for AC 3.1. Current Stage 6 evidence records 14 focused unit tests passing, but the required-mode Chrome suite and every live-site scenario were not run because the required runtime values were absent. The architecture is structurally implementable, but source-compliant acceptance is not ready.
+
+**Counts:** 0 critical findings; 2 high and 3 medium findings; 5 prioritized recommendations/conditions. Stage 4 has not been started by this review. The earlier review/plan's recorded acceptances apply to earlier conditions and do not accept this fresh review.
+
+## Requirements Coverage
+
+| Source criterion / scenario | Architecture and current implementation | Review disposition |
+| --- | --- | --- |
+| AC 1.1, username/email and password controls | `LoginPage` owns both selectors; AC-UI-001 checks visibility. | Designed and implemented. Live visibility remains unverified; AC-UI-001 is supplementary, not a source scenario. |
+| AC 1.2, Remember Me control | Checkbox is owned by `LoginPage` and visibility is checked. TS-LOG-005 adds a browser-restart regression. | The PRD describes session persistence but defines no duration or observable persistence boundary, and does not require persistence across browser restarts. Keep TS-LOG-005 supplementary; clarify source semantics before claiming persistence behavior, and do not infer a restart guarantee. Live behavior is unverified. |
+| AC 1.3, visible/clickable Log in control | Visibility is checked and scenario tests submit through the clickable page-object action. | Coverage is represented across the suite; no live click has been observed in the current verification. |
+| AC 1.4, Lost your password? link and reset-flow navigation | `LoginPage` activates the link; supplementary TS-LOG-006 checks a supported recovery URL, visible reset form, and unauthenticated state. | Navigation/form presence is covered in design and implementation, but unrun in the current verification. It does not establish reset submission/completion. |
+| AC 2.1 / TS-LOG-001, authenticate and reach dashboard/My Account | Scenario asserts `isLoggedIn()`, expected welcome identity, and visible logout. The architecture identifies that the current assertion does not explicitly verify the destination URL. | Partial design/implementation coverage; explicit destination assertion is a closure condition. Live outcome is unverified. |
+| AC 2.2 / TS-LOG-001, specified welcome success message | Environment-provided expected identity is compared in memory by `LoginScenarioAssertions`; diagnostics omit the identity. Focused helper coverage exists. | Static/helper design is sound; live welcome behavior is unverified. The 14 focused-test pass reported in Stage 6 is not live login evidence. |
+| AC 3.1 / TS-LOG-002, incorrect-password notice at top of form | Scenario requires accepted feedback tokens, unauthenticated state, and retained form. It does not assert that the notice is positioned at the top of the form. | Partial; add/confirm a source-aligned position assertion or record a justified observable limitation before claiming AC 3.1. Live behavior is unverified. |
+| AC 4.1 / TS-LOG-003, unregistered-account error | Scenario checks accepted unknown-user tokens, unauthenticated state, and retained form. The token set includes “not registered” and “not found” as well as broader alternatives. | Behavioral intent is represented; confirm the accepted feedback semantics against the criterion and observe it live. Current verification did not run it. |
+| AC 5.1 / TS-LOG-004, both blank fields show inline errors | Current scenario reads native `validationMessage` (with a scoped site-error fallback) and checks both fields, unauthenticated state, and retained form. | **Source criterion unmet.** Native browser validation is not application-rendered inline feedback. Existing TS-LOG-007/008 are also supplementary native-validation checks, not source scenarios. |
+| NFR-1 and US-AUTH-002 | No measurable security/performance threshold is specified. Architecture preserves transport/secret safeguards and maps the user story to source criteria. | No performance/security behavior was tested. Overall source acceptance is not demonstrated while AC 5.1 and live scenarios remain unresolved/unverified. |
+
+The source scenario inventory is exactly TS-LOG-001..004. Current labels TS-LOG-005..008 and AC-UI-001 are project regression labels, not additional PRD criteria. This distinction is correct in the new architecture and must remain explicit in later artifacts.
+
+## Findings
+
+| ID / severity | Classification | Finding and impact |
+| --- | --- | --- |
+| F1 / High | Source requirement gap; blocks source-compliant acceptance | TS-LOG-004 checks browser-native required-field validity, not application-rendered inline errors required by AC 5.1. Requirements records a historical project-deviation acceptance but says it was not independently verified; in any event, a project deviation does not change or satisfy the source criterion. |
+| F2 / High | Verification readiness / environmental blocker | Stage 6 reports required-mode Chrome was not run because `LOGIN_VALID_USERNAME`, `LOGIN_VALID_PASSWORD`, and `LOGIN_EXPECTED_WELCOME` were absent. All live scenarios are unverified in that execution; the reported 14 focused unit tests do not substitute for them. |
+| F3 / Medium | AC 2.1 testability gap | TS-LOG-001 checks generic authenticated signals plus expected identity but does not assert the required dashboard/My Account destination. The architecture notes this limitation without defining closure evidence. |
+| F4 / Medium | AC 3.1 testability gap | TS-LOG-002 checks message tokens, login state, and form visibility but not the source-required top-of-form notice position. |
+| F5 / Medium | Sensitive diagnostic artifact risk | Screenshot capture defaults off, but opt-in redaction only masks selected input values and cannot establish that the rest of a rendered page is free of account data. There is no current CI workflow or artifact policy to mitigate an enabled capture. |
+
+## Positive Design Evidence
+
+- `TestConfig` reads valid credentials and expected welcome identity from runtime environment variables only. Required mode fails visibly when prerequisites are absent; optional mode aborts rather than passing.
+- Page-object ownership is consistent: login selectors/actions in `LoginPage`, shared explicit waits in `BasePage`, and driver/profile lifecycle in `BaseTest`. Waits are bounded, implicit wait is zero, and no fixed sleeps were found in the reviewed path.
+- Invalid-password assertions are active and require expected feedback, unauthenticated state, and a visible login form. The expected-welcome helper performs an in-memory identity comparison without including identity in its diagnostic.
+- Fresh local drivers, sequential execution, best-effort teardown/profile cleanup, and separate pass/fail/skip reporting match the project's limited scope. These are source observations, not runtime lifecycle evidence.
+- Surefire's existing `**/*Tests.java` include and test-scoped pinned dependencies are sufficient for the current suite. There are no test resources or configured `.github/workflows/` CI workflow in the current repository. No added dependency or CI claim is proposed.
+- Screenshot capture is disabled by default. Keep it disabled unless page-level content and artifact handling are reviewed; selected-field redaction is not whole-page sanitization.
+
+## Risk Assessment
+
+| Risk | Likelihood | Impact | Severity | Mitigation |
+| --- | --- | --- | --- | --- |
+| Native validation is reported as satisfying source AC 5.1. | High while implementation remains unchanged | High | High | Preserve PRD wording and label native validation only as a project deviation. Obtain a requirements-owner disposition or observable source-compliant behavior; a deviation never becomes a source pass. |
+| Required source behavior remains unobserved because Chrome acceptance cannot run. | High until runtime prerequisites are supplied | High | High | Use approved secrets only in the Maven process environment; check presence without reading values; run required-mode Chrome and report exact observed counts. A blocker/skip is not a pass. |
+| Wrong post-login destination passes TS-LOG-001. | Medium | High | Medium | Add an explicit dashboard/My Account URL or equivalent source-approved destination assertion and verify it in Chrome. |
+| Invalid-password notice does not meet the source position requirement. | Medium | Medium | Medium | Define a stable top-of-form observable, assert it, and confirm against live behavior; otherwise disclose the unresolved AC 3.1 gap. |
+| Opt-in screenshot exposes data outside redacted fields. | Low while disabled; higher if enabled | High | Medium | Keep disabled; before any enablement review representative page content and explicitly approve storage/access/retention. |
+| Historical plan/review or old reports are mistaken for current gate approval or execution. | Medium | High | Medium | Treat this dated review as the current Stage 3 artifact; historical acceptances and report counts do not accept its conditions or prove a current browser run. |
+
+## Prioritized Recommendations and Conditions
+
+| ID | Priority / class | Action and closure evidence |
+| --- | --- | --- |
+| R1 | P0 / Must resolve before source-compliant acceptance | Keep AC 5.1 unchanged. Establish observable application-rendered inline errors for both fields and matching automation evidence, or obtain an authorized source-requirement change through the requirements process. If a project deviation is accepted for planning, record it as unmet source acceptance; never call native validity a pass for AC 5.1. |
+| R2 | P1 / Should fix before final verification | Add an explicit AC 2.1 dashboard/My Account destination assertion to TS-LOG-001 and demonstrate it in required-mode Chrome. Do not change source/test files in this review. |
+| R3 | P1 / Should fix before final verification | Assert the AC 3.1 error notice's top-of-form placement using a stable observable, or preserve the criterion as unresolved with a documented limitation and owner decision. |
+| R4 | P0 / Must complete for live acceptance evidence | When authorized runtime values and browser/site access are available, run required-mode Chrome. All four source scenarios must execute and their results must be reported; no historical result or focused unit test substitutes for live behavior. Record passes/failures/errors/skips exactly. |
+| R5 | P1 / Should maintain | Keep failure screenshots disabled. Before opt-in, review page-level sensitive content and artifact access/retention; do not treat selected-input redaction as sanitization. |
+
+### Approval Conditions
+
+- **C1 — AC 5.1:** Human explicitly acknowledges that browser-native validation does not meet source AC 5.1, and decides whether to pursue source-compliant feedback or carry an explicitly unmet project deviation. This review does not change the PRD or claim that the historical deviation approval was verified.
+- **C2 — Acceptance assertions:** Stage 4 disposition must include explicit closure evidence for AC 2.1's destination and AC 3.1's notice position, without changing the external application or silently weakening the criteria.
+- **C3 — Runtime evidence:** Current Stage 6 says required-mode Chrome was blocked by absent runtime values. Keep TS-LOG-001..004 unverified until actual browser execution; supply secrets through the process environment only and never expose them.
+- **C4 — Diagnostic safety:** Keep screenshots disabled until representative page content and artifact handling are approved.
+- **C5 — Scope/evidence:** No CI workflow exists. Firefox support is not being removed, but Firefox/cross-browser execution is unrun and outside this review's evidence. Do not claim CI, live-site, performance, security-scan, or reliability results.
+
+**Implementation readiness:** The framework architecture is suitable for a bounded plan, but it is **not ready for source-compliant acceptance or verification closure**. AC 5.1 is unmet; AC 2.1 and AC 3.1 need explicit assertion closure; live Chrome prerequisites are absent. This review did not start Stage 4. The next permitted stage is Stage 4 planning only after this fresh review's blocking conditions are resolved or explicitly accepted by the human. Acceptance does not convert unmet or unrun criteria into passes. No stage after Stage 3 is authorized here.
+
+**Human gate:** Accepted for Stage 4 planning only. On 2026-10-14, the user explicitly accepted all fresh Stage 3 conditions C1-C5 with “yes”. This resolves the gate to delegate Stage 4 planning; it does not authorize Stage 5, accept Stage 6 limitations, or convert AC 5.1, AC 2.1, AC 3.1, or any unrun browser scenario into a pass. AC 5.1 remains unmet by browser-native validation; live Chrome evidence remains unverified; Firefox/cross-browser execution and CI remain unrun.
+
+## Evidence and Limitations
+
+The [2026-10-14 verification report](verification-report.md) records `mvn -q -DskipTests compile test-compile` passing and the focused command `mvn -q "-Dtest=TestConfigTests,CredentialTestGuardTests,LoginScenarioAssertionsTests,TestLifecycleTests" test` passing with 14 tests: 14 passed, 0 failed, 0 errors, 0 skipped. The required-mode Chrome command was **not run** because the three runtime values were absent. These outcomes are taken from the report; no command was run for this review. No browser scenario was exercised in this review or the current Stage 6 execution.
+
+No Firefox, CI, live-site, network, dependency/security scan, screenshot capture, performance, slow-network, or reliability check was performed. Historical execution counts elsewhere in this file are retained for audit and are not current results. Requirements/source comparison is based on the current requirements artifact; no independent Confluence retrieval was available. Credentials were not copied or inspected.
+
+## Traceability
+
+Reviewed [requirements.md](requirements.md), user-approved [architecture.md](architecture.md), existing [implementation plan](impl-plan.md) and [verification report](verification-report.md), prior contents of this review, [canonical instructions](../../copilot-instructions.md), [repository context](../../.github/copilot-instructions.md), [design-review agent](../../.github/agents/design-review.agent.md), [SDLC orchestrator](../../.github/agents/sdlc_orchestrator.agent.md), [pom.xml](../../pom.xml), and [README](../../README.md). No `.github/workflows/` configuration or test resources are present in the current workspace structure.
+
+Current source inspected: [BaseTest](../../src/test/java/Github_Copilot/base/BaseTest.java), [TestConfig](../../src/test/java/Github_Copilot/config/TestConfig.java), [TestData](../../src/test/java/Github_Copilot/data/TestData.java), [BasePage](../../src/test/java/Github_Copilot/pages/BasePage.java), [LoginPage](../../src/test/java/Github_Copilot/pages/LoginPage.java), [LoginPageTests](../../src/test/java/Github_Copilot/tests/LoginPageTests.java), [CredentialTestGuard](../../src/test/java/Github_Copilot/tests/CredentialTestGuard.java), [LoginScenarioAssertions](../../src/test/java/Github_Copilot/tests/LoginScenarioAssertions.java), [LoginScenarioAssertionsTests](../../src/test/java/Github_Copilot/tests/LoginScenarioAssertionsTests.java), [TestLifecycleListener](../../src/test/java/Github_Copilot/listeners/TestLifecycleListener.java), [TestOutcome](../../src/test/java/Github_Copilot/listeners/TestOutcome.java), [ExtentReportExtension](../../src/test/java/Github_Copilot/listeners/ExtentReportExtension.java), [ScreenshotUtil](../../src/test/java/Github_Copilot/utils/ScreenshotUtil.java), and [LogUtil](../../src/test/java/Github_Copilot/utils/LogUtil.java). All claims about current runtime behavior are limited to the cited verification report; no credentials or values were included.
+
+---
+
+# Prior Stage 3 Design Review — Restarted SDLC (2026-10-09)
+
+**Current repository status (2026-10-14):** This workspace contains no
+`.github/workflows/` directory or configured GitHub Actions workflow. The
+dated review below records its 2026-10-09 evidence and baseline; its references
+to a configured CI matrix are historical and do not describe the current tree.
 
 ## Review Metadata
 
@@ -9,8 +120,8 @@
 | Reviewer | Design Review Agent |
 | Approved input | Updated Stage 2 architecture; human approval recorded 2026-10-09 |
 | PRD basis | `requirements.md` records a fresh check against Confluence page 11796481, version 2. This review checked the recorded requirements and traceability; no independent Confluence retrieval was available in this review session. |
-| Scope | Selenium test framework only; external login application is not reviewed or changed. Chrome-only execution is the user-directed verification scope. Firefox support and its CI configuration are left unchanged; Firefox/cross-browser execution is unrun. |
-| Review method | Static review of requirements, approved architecture, current Java/test source, Maven/CI configuration, and retained 2026-10-09 verification artifacts. No tests or browsers were run for this design review. |
+| Scope | Selenium test framework only; external login application is not reviewed or changed. Chrome-only execution is the user-directed verification scope. Firefox support is unchanged; Firefox/cross-browser execution is unrun. No CI workflow is currently configured. |
+| Review method | Static review of requirements, approved architecture, current Java/test source, Maven configuration, and retained 2026-10-09 verification artifacts. No tests or browsers were run for this design review. |
 | Worktree handling | Updated only this working copy. No source, staging, commit, push, or PR changes were made. The pre-existing staged deletion/untracked working-copy state was preserved. |
 
 ## Executive Summary
@@ -43,7 +154,7 @@ Approval is conditional on preserving the source/project distinction for FR-2 an
 | F1 / High | Source requirement vs. deviation | FR-2 in the source requires application-rendered inline errors. Current tests assert browser-native validity instead. The deviation is explicitly accepted for project scope, but cannot be reported as satisfying source wording; this blocks an unconditional Stage 6 PASS under the stated gate. |
 | F2 / High | Required browser evidence | The retained Chrome report records 3 credential-dependent skips: TS-LOG-001, TS-LOG-002, and TS-LOG-005. Required-mode execution with all required cases passing has not been demonstrated. The code correctly distinguishes optional skips from required-mode failures; the evidence gap is environmental/verification, not a credential-guard design defect. |
 | F3 / Medium | FR-5 assertion strength | `LoginPage.isLoggedIn()` accepts generic “hello”/“log out” text inside dashboard content. TS-LOG-005 uses this predicate after browser restart without also requiring the logout control or expected identity, leaving a weaker-than-necessary persistence oracle. |
-| F4 / Medium | Screenshot data exposure | Capture defaults off and CI does not enable it. If an operator opts in, current redaction replaces selected form input values only; it does not establish that the rendered page contains no other personal/account data. Keep the option off until representative page and artifact handling are reviewed. |
+| F4 / Medium | Screenshot data exposure | Capture defaults off. No CI workflow or artifact upload is currently configured. If an operator opts in locally, current redaction replaces selected form input values only; it does not establish that the rendered page contains no other personal/account data. Keep the option off until representative page and artifact handling are reviewed. |
 | F5 / Low | Evidence boundary / external source | The requirements artifact records a fresh page-11796481 v2 reread. This review had no independent Confluence retrieval capability, so source comparison is traceable to that artifact rather than a second direct fetch. Historical test/report and workflow data are not current execution by this reviewer. |
 
 ## Positive Design Evidence
@@ -52,8 +163,8 @@ Approval is conditional on preserving the source/project distinction for FR-2 an
 - `LoginScenarioAssertions` actively verifies invalid-password outcomes. Its unit test rejects missing feedback, authenticated state, or a missing form. The welcome helper rejects generic/mismatched greetings and keeps identity out of failure text.
 - `BaseTest` centralizes per-test drivers and teardown, uses a temporary profile for Remember Me, and preserves Chrome/Firefox code paths. `BasePage` uses bounded explicit waits and no fixed sleeps were found in the reviewed page/test code.
 - Configuration validates transport, bounds page-load timeout, keeps implicit wait at zero, and uses system-property/environment/default precedence only for non-secret settings.
-- Surefire's `**/*Tests.java` pattern selects `LoginPageTests` plus the browser-independent `*Tests` classes. The workflow is serial, configures Java 21 and headless browser jobs, injects secrets as environment variables, and uploads Surefire reports. These are configuration facts, not proof of CI execution. Under current user direction, run Chrome only; leave Firefox support and CI matrix untouched and report Firefox/cross-browser unrun.
-- Failure screenshots are off by default; the workflow's upload step does not itself enable capture. Extent and lifecycle outcomes distinguish pass, fail, and aborted/skipped tests in source.
+- Surefire's `**/*Tests.java` pattern selects `LoginPageTests` plus the browser-independent `*Tests` classes. No GitHub Actions workflow, CI browser matrix, secret mapping, or artifact upload is present in the current repository. Under current user direction, run Chrome only; leave Firefox support unchanged and report Firefox/cross-browser unrun.
+- Failure screenshots are off by default. Extent and lifecycle outcomes distinguish pass, fail, and aborted/skipped tests in source.
 
 ## Risk Assessment
 
@@ -103,7 +214,7 @@ Confluence source caveat: the reviewed requirements artifact states that page 11
 
 ## Traceability
 
-Reviewed [requirements.md](requirements.md), user-approved [architecture.md](architecture.md), [implementation plan](impl-plan.md), [verification report](verification-report.md), root and repository instructions, [pom.xml](../../pom.xml), [README](../../README.md), [workflow YAML](../../.github/workflows/selenium-login.yml), and [workflow guide](../../.github/workflows/selenium-login-workflow.md).
+Reviewed [requirements.md](requirements.md), user-approved [architecture.md](architecture.md), [implementation plan](impl-plan.md), [verification report](verification-report.md), root and repository instructions, [pom.xml](../../pom.xml), and [README](../../README.md). The current repository has no workflow YAML or workflow guide.
 
 Current source reviewed: [BaseTest](../../src/test/java/Github_Copilot/base/BaseTest.java), [TestConfig](../../src/test/java/Github_Copilot/config/TestConfig.java) and [TestConfigTests](../../src/test/java/Github_Copilot/config/TestConfigTests.java), [TestData](../../src/test/java/Github_Copilot/data/TestData.java), [BasePage](../../src/test/java/Github_Copilot/pages/BasePage.java), [LoginPage](../../src/test/java/Github_Copilot/pages/LoginPage.java), [LoginPageTests](../../src/test/java/Github_Copilot/tests/LoginPageTests.java), [CredentialTestGuard](../../src/test/java/Github_Copilot/tests/CredentialTestGuard.java) and [CredentialTestGuardTests](../../src/test/java/Github_Copilot/tests/CredentialTestGuardTests.java), [LoginScenarioAssertions](../../src/test/java/Github_Copilot/tests/LoginScenarioAssertions.java) and [LoginScenarioAssertionsTests](../../src/test/java/Github_Copilot/tests/LoginScenarioAssertionsTests.java), [TestLifecycleListener](../../src/test/java/Github_Copilot/listeners/TestLifecycleListener.java), [ExtentReportExtension](../../src/test/java/Github_Copilot/listeners/ExtentReportExtension.java), [ScreenshotUtil](../../src/test/java/Github_Copilot/utils/ScreenshotUtil.java), and [LogUtil](../../src/test/java/Github_Copilot/utils/LogUtil.java). Retained reports checked under `target/surefire-reports/`.
 

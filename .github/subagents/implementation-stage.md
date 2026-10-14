@@ -10,9 +10,9 @@ Implement approved Stage 5 tasks in dependency order, meeting
 `docs/sdlc/impl-plan.md` criteria and preserving the approved architecture and
 design-review conditions. Supply the agent with the plan, `architecture.md`,
 `design-review.md`, applicable `requirements.md`, relevant
-`src/test/java/Github_Copilot/` files, `pom.xml`, workflow configuration,
-bounded tasks/dependencies/acceptance criteria, and prior validation or known
-environment limits.
+`src/test/java/Github_Copilot/` files, `pom.xml`, CI configuration if present
+(none is currently configured), bounded tasks/dependencies/acceptance criteria,
+and prior validation or known environment limits.
 
 The agent must read current source and tests before editing; verify whether
 planned work already exists. This repository tests an external login site and

@@ -40,8 +40,9 @@ changed behavior and directly related risks:
 - sensitive data in source, command examples, logs, screenshots, reports, and
   CI artifacts; screenshot capture is opt-in and field redaction is not proof
   that all page data is safe
-- JUnit listeners, outcome classification, diagnostics, Maven/Surefire test
-  discovery, and consistency between workflow YAML and its guide
+- JUnit listeners, outcome classification, diagnostics, and Maven/Surefire
+  test discovery; inspect workflow YAML and related guidance only if present
+  (no CI workflow is currently configured)
 - whether changes preserve sequential execution, supported project scope, and
   existing dependencies without unjustified parallelism or extra frameworks
 

@@ -42,8 +42,9 @@ Report only actionable, evidence-based findings. For every finding include:
 
 Separate confirmed defects from questions, limitations, and optional suggestions.
 Do not report style nits as defects. Validate claims against source and observed
-results; workflow configuration is not proof of test/CI/browser success. Never
-expose secrets. If no findings exist, state so and note relevant limitations or
+results; verify whether CI configuration exists before describing it, and
+never treat configuration as proof of test/CI/browser success. Never expose
+secrets. If no findings exist, state so and note relevant limitations or
 unreviewed areas.
 
 ## Report and publication gate

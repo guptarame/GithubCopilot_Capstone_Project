@@ -1,49 +1,50 @@
 # Requirements Document
 
-**Feature:** Customer Login & Authentication on My Account Page
-**Source:** [Confluence PRD, Customer Login & Authentication](https://epam-team-en32bjvm.atlassian.net/wiki/spaces/MFS/pages/11796481/Customer+Login+Authentication) (page ID 11796481, space MFS, version 2; last updated 2026-09-21 16:32:06 UTC)
-**Date:** 2026-10-09
-**Agent:** requirements-agent
-
-**Fresh Stage 1 source recheck (2026-10-09):** The current Confluence page was retrieved by page ID and its full content reviewed. Its version, title, source criteria, and six test scenarios match this analysis; no product requirement changes were needed. The required-field source criterion remains application-rendered inline errors. The browser-native validation deviation below is project context only and does not fulfill that criterion; its approval is retained as recorded in the prior artifact, not independently re-verified during this source recheck.
+**Feature:** Customer Login & Authentication
+**Source:** [Confluence PRD, Customer Login & Authentication](https://epam-team-en32bjvm.atlassian.net/wiki/spaces/MFS/pages/11796481/Customer+Login+Authentication) (page ID 11796481, space MFS)
+**Source review:** The full page was read in the authenticated Confluence browser. On 2026-10-14, the page UI displayed “Updated 21m ago”; the exact version and timestamp are unavailable. The configured Confluence MCP API did not provide the source content, so this analysis uses the authenticated rendered page.
+**Analysis date:** 2026-10-14
+**Analyst:** requirements-agent
 
 ---
 
 ## Overview
 
-A registered customer shall be able to authenticate from the My Account login page to access the customer dashboard and account-management functions. The login flow includes credential entry, optional session persistence, required-field feedback, invalid-credential feedback, and password recovery navigation.
+US-AUTH-002 describes a registered customer/e-commerce shopper logging in with username/email and password to view the dashboard, manage orders, update billing/shipping, and review account details. The My Account login page provides credential fields, Remember Me, Log in, and password-reset navigation. The source gives the feature High priority and Critical severity.
 
-**Scope:** Login on the My Account page at <https://askomdch.com/account/>. The PRD identifies the feature as High priority and Critical severity.
+**Scope:** Customer login and the controls, validation, authentication outcomes, and password-reset navigation specified for <https://askomdch.com/account/>.
 
 ---
 
 ## Functional Requirements
 
 ### FR-1: Display login controls
-**Description:** The login form shall provide a username/email field (`id=username`), a password field (`id=password`), a Remember Me checkbox, a visible and clickable Log in button (`name=login`), and a Lost your password? link.
-**Acceptance Criteria:** The specified controls are present and identifiable by their stated labels and attributes. (TS-LOG-004, TS-LOG-005, TS-LOG-006)
+**Description:** The login page shall provide username/email (`id=username`) and password (`id=password`) fields, a Remember Me checkbox, a visible and clickable Log in control (`name=login`), and a Lost your password? link.
+**Source acceptance criteria:** AC 1.1–1.4, Page UI & Elements. The Lost your password? link redirects to the password-reset flow.
+**Acceptance criteria:** The named fields and controls are present. The Log in control is visible and clickable. Activating Lost your password? navigates to the password-reset flow. The source lists Remember Me to persist the user session but does not specify duration or require persistence across browser restarts.
 
 ### FR-2: Validate required credentials
-**Description:** The login form shall prevent submission when the username/email or password is empty and show an inline required-field error for each empty field.
-**Source acceptance criterion:** Submitting both fields empty leaves the user on the login page and displays inline required errors for both fields. (TS-LOG-004)
-**Approved project deviation (2026-10-02):** The existing requirements artifact records human reviewer acceptance of browser-native required-field validation for this automation scope instead of application-rendered inline errors. No separate approval record was retrieved during this analysis. This does not change or reinterpret the source PRD.
-**Project acceptance criteria:** Empty submission remains on the login page; browser-native validation identifies each empty field as required. (TS-LOG-004, TS-LOG-007, TS-LOG-008)
+**Description:** Submitting the form with blank username and password fields is prevented, and inline validation errors are triggered for both required fields.
+**Source acceptance criterion:** AC 5.1. This wording is the source criterion; browser-native validation is not equivalent to application inline errors.
+**Current source scenario:** TS-LOG-004, blank username and password.
 
 ### FR-3: Authenticate valid credentials
-**Description:** The system shall authenticate a registered customer when valid credentials are submitted.
-**Acceptance Criteria:** Successful authentication redirects to the customer dashboard / My Account home and displays a welcome message identifying the customer and a Log out option. (TS-LOG-001)
+**Description:** Valid credentials authenticate the customer and redirect to the customer dashboard/My Account home.
+**Source acceptance criteria:** AC 2.1–2.2. The customer is redirected to the dashboard/My Account home and sees the specified welcome success message.
+**Current source scenario:** TS-LOG-001, successful login.
 
 ### FR-4: Report invalid credentials
-**Description:** The system shall reject an incorrect password or an unregistered username/email and show an error at the top of the login form.
-**Acceptance Criteria:** Each invalid-credential case remains on the login page and displays an error indicating the credentials are incorrect or the username/email is invalid. (TS-LOG-002, TS-LOG-003)
+**Description:** An incorrect password keeps the user on the login page and displays an error notice at the top of the form. An unregistered account keeps the user on the login page and displays an error indicating the account does not exist.
+**Source acceptance criteria:** AC 3.1 covers an incorrect password; AC 4.1 covers an unregistered account.
+**Current source scenarios:** TS-LOG-002, incorrect password; TS-LOG-003, unregistered user.
 
-### FR-5: Persist a remembered session
-**Description:** When Remember Me is selected, the customer session shall remain active across browser restarts.
-**Acceptance Criteria:** After successful login with Remember Me selected, restarting the browser does not end the customer session. (TS-LOG-005)
+### FR-5: Provide the Remember Me control
+**Description:** The login form shall display the Remember Me checkbox, identified in AC 1.2 as a control to persist the user session.
+**Acceptance criteria:** The checkbox is present. The persistence duration and behavior after browser restart are unspecified; restart persistence is not a source requirement.
 
 ### FR-6: Navigate to password recovery
-**Description:** The Lost your password? link shall direct the customer to the password reset/recovery flow.
-**Acceptance Criteria:** Activating the link opens the password reset or recovery page. (TS-LOG-006)
+**Description:** The Lost your password? link shall redirect to the password-reset flow.
+**Source acceptance criterion:** AC 1.4, Page UI & Elements. The current PRD does not list a dedicated password-reset test scenario.
 
 ---
 
@@ -59,7 +60,14 @@ A registered customer shall be able to authenticate from the My Account login pa
 
 **US-AUTH-002:** As a registered customer/e-commerce shopper, I want to securely log into my account using my username/email and password, so that I can view my dashboard, manage orders, update billing/shipping addresses, and review account details.
 
-**Acceptance Criteria:** Covered by FR-1 through FR-6 and scenarios TS-LOG-001 through TS-LOG-006 above.
+The current PRD lists exactly four test scenarios:
+
+- **TS-LOG-001:** Successful login.
+- **TS-LOG-002:** Incorrect password.
+- **TS-LOG-003:** Unregistered user.
+- **TS-LOG-004:** Blank username and password.
+
+The current PRD lists exactly these four scenarios; it does not list a dedicated Remember Me restart or password-reset scenario. Password-reset navigation remains a requirement under AC 1.1–1.4, while no source criterion requires Remember Me to survive browser restarts.
 
 ---
 
@@ -68,7 +76,6 @@ A registered customer shall be able to authenticate from the My Account login pa
 - The customer has an active internet connection and a supported browser.
 - The customer has a registered account on askomdch.com.
 - The customer is on the My Account login page: <https://askomdch.com/account/>.
-- The PRD identifies the module as Customer Login Portal.
 
 ## Out of Scope
 
@@ -86,22 +93,27 @@ No additional assumptions have been introduced beyond the stated PRD preconditio
 
 ## Open Questions
 
-- What is the expected duration of a Remember Me session? The PRD requires persistence across browser restarts but does not define a duration.
-- Are the PRD's example error messages illustrative, or must exact message text be used?
-- What measurable security and performance criteria, if any, should be added?
+- What session duration and persistence behavior does Remember Me promise? In particular, is persistence across browser restarts intended? The current PRD does not say.
+- Are the source's example validation and authentication messages illustrative, or must exact text be used?
+- What measurable security or performance criteria, if any, should be defined?
+- Should password-reset navigation receive a dedicated scenario in a future source revision? It is currently required by AC 1 but has no dedicated listed scenario.
 
-## Approved Deviations
+## Project Deviation Record
 
-- On 2026-10-02, the human reviewer accepted browser-native required-field validation in place of the source PRD's application-rendered inline errors for FR-2. Verification must report this as a project-approved deviation, not as fulfillment of the source wording.
+The prior requirements artifact recorded that on 2026-10-02 a human reviewer accepted browser-native required-field validation for this automation scope in place of FR-2's source wording. That historical approval record is carried forward here but has not been independently verified during this resume; no additional approval is claimed. Browser-native validation does **not** fulfill the source requirement for inline validation errors. The source requirement remains authoritative unless the project obtains and records a valid change to it.
 
-## Success Criteria
+## Source Success Criteria
 
-All six PRD test scenarios pass: valid login redirects with a welcome message (TS-LOG-001); incorrect password and unregistered username/email each show an error on the login page (TS-LOG-002 and TS-LOG-003); empty submission is prevented and both required errors appear (TS-LOG-004); Remember Me preserves the session across browser restarts (TS-LOG-005); and the lost-password link opens recovery (TS-LOG-006).
+The source criteria are: AC 1.1–1.4, the specified login controls and password-reset navigation; AC 2.1–2.2, successful authentication, dashboard/welcome outcome; AC 3.1, incorrect-password failure; AC 4.1, unregistered-account failure; and AC 5.1, blank username and password with inline errors on both. The source scenario list contains only TS-LOG-001 through TS-LOG-004 as enumerated above. These are requirements, not a claim that the scenarios have been executed or passed. No additional Remember Me restart or password-reset scenario is listed.
 
 ## Traceability
 
-- Source read for this analysis: [Customer Login & Authentication PRD](https://epam-team-en32bjvm.atlassian.net/wiki/spaces/MFS/pages/11796481/Customer+Login+Authentication), page ID 11796481, space MFS, version 2, last updated 2026-09-21 16:32 UTC.
-- FR-1 maps to Acceptance Criteria 1 (Page UI & Elements); FR-2 maps to Acceptance Criteria 2 (Validation & Field Checks) and TS-LOG-004; FR-3 maps to Acceptance Criteria 3 (Successful Authentication) and TS-LOG-001; FR-4 maps to Acceptance Criteria 4 (Failed Authentication) and TS-LOG-002/003; FR-5 and FR-6 map to the corresponding TS-LOG-005 and TS-LOG-006 scenarios.
-- NFR-1 reflects the absence of measurable performance or security criteria in the supplied PRD; no thresholds have been inferred.
-- FR-2 browser-native validation is recorded as a project deviation from the PRD's inline-error criterion; the source requirement remains unchanged above.
-- Next Stage: Architecture.
+- **FR-1:** AC 1.1–1.4, Page UI & Elements (username/email, password, Remember Me, Log in, and Lost your password? controls/navigation).
+- **FR-2:** AC 5.1; TS-LOG-004.
+- **FR-3:** AC 2.1–2.2; TS-LOG-001.
+- **FR-4:** AC 3.1 (incorrect password), TS-LOG-002; AC 4.1 (unregistered account), TS-LOG-003.
+- **FR-5:** AC 1.2. No restart-persistence scenario is present in the current source.
+- **FR-6:** AC 1.4. There is no dedicated password-reset scenario in the current source.
+- **NFR-1:** The PRD's absence of measurable performance/security thresholds; no threshold inferred.
+
+**Stage 1 handoff:** Requirements artifact reconciled against the authenticated source. Stage 1 only was run; Stage 2 and later stages were not started. The prior rejection of the architecture proposal remains in effect.

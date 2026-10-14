@@ -12,7 +12,8 @@ review quality, not whether the PR should merge.
 - Assess correctness and requirements/plan traceability; Selenium waits and
   page-object boundaries; test isolation and driver/profile cleanup;
   configuration; credential and sensitive-data handling; diagnostics; and
-  Maven/CI compatibility.
+  Maven compatibility. Check CI compatibility only when CI configuration
+  exists; no CI workflow is currently configured.
 - Report only actionable, evidence-based findings. Give each severity, exact
   file/line, impact, confidence, and focused recommendation. Separate confirmed
   defects from questions, limitations, and suggestions. If none, say so and

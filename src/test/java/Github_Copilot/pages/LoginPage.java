@@ -16,6 +16,8 @@ public class LoginPage extends BasePage {
     private final By lostPasswordLink = By.linkText("Lost your password?");
     private final By passwordRecoveryForm = By.cssSelector("form.woocommerce-ResetPassword");
     private final By dashboardContent = By.cssSelector("div.woocommerce-MyAccount-content");
+    private final By accountNavigation = By.cssSelector("nav.woocommerce-MyAccount-navigation");
+    private final By loginForm = By.cssSelector("form.woocommerce-form-login");
     private final By errorBanner = By.cssSelector("ul.woocommerce-error, div.woocommerce-notices-wrapper .woocommerce-error");
     private final By logoutLink = By.linkText("Log out");
 
@@ -64,6 +66,32 @@ public class LoginPage extends BasePage {
 
     public boolean isLogoutVisible() {
         return isVisible(logoutLink);
+    }
+
+    public boolean isMyAccountDashboardVisible() {
+        return isVisible(accountNavigation) && isVisible(dashboardContent);
+    }
+
+    public boolean isErrorNoticeAtTopOfLoginForm() {
+        if (!(driver instanceof JavascriptExecutor javascriptExecutor)) {
+            return false;
+        }
+
+        var notice = driver.findElements(errorBanner).stream()
+                .filter(org.openqa.selenium.WebElement::isDisplayed)
+                .findFirst()
+                .orElse(null);
+        var form = driver.findElements(loginForm).stream()
+                .filter(org.openqa.selenium.WebElement::isDisplayed)
+                .findFirst()
+                .orElse(null);
+        if (notice == null || form == null) {
+            return false;
+        }
+
+        return Boolean.TRUE.equals(javascriptExecutor.executeScript(
+                "return arguments[0].getBoundingClientRect().bottom <= arguments[1].getBoundingClientRect().top;",
+                notice, form));
     }
 
     public LoginPage enterUsername(String value) {

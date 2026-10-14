@@ -1,4 +1,102 @@
-# Fresh Stage 4 Implementation Plan — Restarted SDLC (2026-10-09)
+# Stage 4 Implementation Plan — Refreshed (2026-10-14)
+
+## Authority and Scope
+
+| Item | Value |
+| --- | --- |
+| Scope | Java 21 / Maven / Selenium framework for `US-AUTH-002`; no changes to the external login application. |
+| Requirements | Current [requirements](requirements.md), analyzed 2026-10-14 from the authenticated rendered Confluence page. Exact source version/timestamp was unavailable; see the source caveat in that artifact. |
+| Architecture | Fresh [architecture](architecture.md), approved by the user on 2026-10-14. |
+| Design review | Fresh [design review](design-review.md), with C1-C5 explicitly accepted on 2026-10-14 for Stage 4 planning only. This is not acceptance of Stage 6 limitations. |
+| Current verification evidence | [Verification report](verification-report.md), 2026-10-14: compile/test-compile passed; focused tests 14/14 passed; required-mode Chrome was not run because approved runtime values were absent. Historical browser results are not current evidence. |
+| Current project boundary | Current source, tests, `pom.xml`, and README inspected. No `.github/workflows/` directory or configured CI, secret mapping, or artifact upload exists. |
+| Plan status | 5 tasks: 1 Small, 3 Medium, 1 Large; 10 engineer-hours total, 8 hours remaining (one completed, four open). Estimates exclude external-owner waits and browser runtime. |
+| Plan status | 5 tasks: 1 Small, 3 Medium, 1 Large; 10 engineer-hours total, 8 hours remaining (one completed, four open). Estimates exclude external-owner waits and browser runtime. |
+
+The previous plan draft and older revisions are retained below as history and are superseded by this refreshed task list. This update changes only this planning document. It does not authorize or begin Stage 5, run tests, accept Stage 6 limitations, or change the source PRD. Stage 4 planning is authorized by the recorded C1-C5 acceptance.
+
+## Baseline and Decisions
+
+- Source scenarios are exactly TS-LOG-001 through TS-LOG-004. AC 1.1-1.4 also require the controls and password-reset navigation. TS-LOG-005 through TS-LOG-008 and AC-UI-001 are supplementary project regression checks, not additional PRD scenarios.
+- **AC 5.1 remains unmet** unless the external page demonstrably provides application-rendered inline errors for both blank fields and the framework verifies those errors, or an authorized source-requirement change is made. Current browser-native validity checks are only the accepted project deviation; they do not fulfill AC 5.1. No change to the external site is in scope.
+- Current TS-LOG-001 asserts authenticated state, expected welcome identity, and logout visibility, but not the AC 2.1 dashboard/My Account destination. Current TS-LOG-002 asserts feedback, unauthenticated state, and retained form, but not the AC 3.1 top-of-form notice position. Both need explicit closure assertions before final verification.
+- The Remember Me post-restart helper already requires nonblank dashboard content and visible logout, with three focused helper tests recorded passing. This is supplementary coverage; live persistence remains unverified and is not a source restart-persistence requirement.
+- `TestConfig` provides environment-only credentials and expected identity, required/optional credential guards, HTTPS/local-HTTP policy, positive bounded page-load timeout, and screenshots-off default. `BaseTest` configures fresh browser instances, bounded page-load timeout, zero implicit wait, headless options, profile reuse, and teardown. `BasePage` uses bounded explicit waits. These are existing implementation, not new work; behavior requiring a browser is still subject to fresh evidence.
+- The existing invalid-password helper is active. Unknown-user, field-validation, recovery URL/form, and required-control checks exist. Recovery evidence means navigation/form presence only, not reset completion. No new dependency, test-data framework, performance target, CI workflow, or cross-browser execution is planned.
+
+## Task Breakdown
+
+Priority P0 denotes a gate or blocker to acceptance; P1 is a required assertion/verification improvement. Estimates cover framework work and focused checks, excluding external waiting and full browser runtime.
+
+| ID | Task and deliverable | Status; priority / complexity / effort | Dependencies | Measurable acceptance and closure evidence |
+| --- | --- | --- | --- | --- |
+| P4-01 | Strengthen supplementary TS-LOG-005 after restarting Chrome with the same temporary profile: require dashboard content and visible logout. | **Complete**; P1 / Medium / 2 h | None | `LoginScenarioAssertions.assertRememberMeSession` checks both signals and is called after restart. Three focused helper tests passed in the 2026-10-14 report. This closes the assertion implementation only; live TS-LOG-005 remains unverified. |
+| P4-02 | Add explicit AC 2.1 dashboard/My Account destination assertion to successful-login scenario and keep it distinct from the welcome/authentication assertions. | **Open; Stage 5**; P1 / Medium / 1.5 h | None | The scenario fails if the authenticated state is reached at a destination other than the source-required dashboard/My Account home. Use a stable URL or equivalent source-approved destination signal; generic dashboard text, welcome identity, and logout alone do not close this criterion. Add/update focused assertion coverage as appropriate. No identity value may enter diagnostics. |
+| P4-03 | Add explicit AC 3.1 top-of-form position assertion for the incorrect-password notice. | **Open; Stage 5**; P1 / Medium / 1.5 h | None | Establish a stable observable for the notice's position relative to the login form (DOM relationship or another demonstrated stable page signal); assert it along with existing error, unauthenticated, and retained-form checks. Message presence alone is insufficient. If no reliable observable exists, preserve AC 3.1 as unresolved and record the evidence/owner decision rather than weakening it. |
+| P4-04 | Resolve or explicitly carry forward the AC 5.1 source-compliance disposition. No external-site implementation is in scope. | **Open disposition gate**; P0 / Small / 1 h | None; external requirement-owner input may be needed | Closure for source compliance requires evidence that both fields produce application-rendered inline errors plus source-compliant test assertions, or an authorized requirements-process change recorded in `requirements.md`. Native `validationMessage` alone does not close this task. If neither route is authorized/available, mark AC 5.1 unmet in Stage 6 and prohibit an unconditional PASS; the user's C1 acceptance is not a requirement change or Stage 6 limitation acceptance. |
+| P4-05 | Run and document required-mode Chrome verification in Stage 6 after assertion tasks and the AC 5.1 disposition are recorded. | **Open; Stage 6**; P0 / Large / 4 h | P4-01, P4-02, P4-03, P4-04 | When Chrome/driver, target-site access, and approved runtime values are available, run `mvn --batch-mode test -Dbrowser=chrome -Dheadless=true -DrequireCredentialTests=true`. Supply `LOGIN_VALID_USERNAME`, `LOGIN_VALID_PASSWORD`, and `LOGIN_EXPECTED_WELCOME` only through the test process environment/approved secret store; check presence without reading or printing values. All four source scenarios must execute. Record exact command, environment/tool/browser versions, suite and scenario pass/fail/error/skip counts, and report paths. A skip is not a pass. With AC 5.1 unmet, the report must say so and cannot claim source-compliant PASS; any `PASS WITH LIMITATIONS` must follow the Stage 6 gate and receive fresh explicit human acceptance before Stage 7. Firefox support stays unchanged and Firefox/cross-browser execution remains unrun. |
+
+### Dependency Order and Phases
+
+The dependency graph is acyclic: `P4-01` complete; `P4-02`, `P4-03`, and `P4-04` are independent; `P4-05` depends on all four. If AC 5.1 remains unresolved, P4-05 may still collect Chrome evidence, but its report must preserve the unmet-source limitation and cannot produce an unconditional PASS.
+
+| Phase | Work | Exit condition |
+| --- | --- | --- |
+| 1. Existing foundation | P4-01 complete; configuration, driver lifecycle, bounded waits, guards, reporting, and cleanup inspected. | No foundation implementation gap is scheduled without a demonstrated defect. |
+| 2. Source-criterion assertion closure | P4-02 and P4-03. | AC 2.1 destination and AC 3.1 notice position have explicit, stable assertions or are documented unresolved with evidence. |
+| 3. Source gap disposition | P4-04. | AC 5.1 is source-compliant, formally changed through requirements control, or expressly remains unmet. Browser-native validation is never relabeled as inline feedback. |
+| 4. Chrome verification | P4-05, Stage 6 only. | Required source cases are executed in Chrome; exact results and all skips/blockers are reported. Firefox, CI, slow-network, and performance coverage remain unclaimed. |
+
+## Architecture and Requirements Traceability
+
+| Requirement / architecture area | Existing coverage and task / verification mapping |
+| --- | --- |
+| AC 1.1: username/email and password; AC 1.2: Remember Me control; AC 1.3: visible/clickable Log in; AC 1.4: recovery-link navigation | `LoginPage` owns controls/actions; tests cover visibility, submission, and recovery destination/form. Verify by P4-05. Source defines no restart-persistence duration; P4-01/TS-LOG-005 remains supplementary. |
+| AC 2.1 / FR-3 destination; AC 2.2 / welcome; TS-LOG-001 | Privacy-safe expected-identity comparison and authenticated/logout checks exist. Destination assertion is missing: P4-02, then live Chrome evidence in P4-05. |
+| AC 3.1 / TS-LOG-002 | Invalid-password feedback, unauthenticated state, and form retention are asserted. Top-of-form position is missing: P4-03, then live Chrome evidence in P4-05. Known username is runtime-only. |
+| AC 4.1 / TS-LOG-003 | Unknown-user feedback and unauthenticated/retained-form checks exist; verify live outcome in P4-05. |
+| AC 5.1 / FR-2 / TS-LOG-004 | Current checks exercise browser-native validity, not application-rendered inline errors. P4-04 preserves source gap or requires source-compliant evidence/authorized change; P4-05 reports the exact status. TS-LOG-007/008 are supplementary too. |
+| US-AUTH-002; source scenario inventory | Source scope is TS-LOG-001..004. P4-05 executes all four in Chrome; supplementary TS-LOG-005..008 and AC-UI-001 remain separately identified. |
+| NFR-1 | No measurable performance/security target exists. No SLA, security-scan, reliability, or slow-network task is inferred. |
+| `TestConfig` / `TestData` | Existing non-secret setting precedence, HTTPS/local-HTTP guard, positive bounded `pageLoadTimeout`, environment-only credentials/identity, wait defaults, and message tokens. Focused configuration tests are recorded passing in the 2026-10-14 verification report. No new configuration work. |
+| `BaseTest` driver lifecycle | Fresh Chrome/Firefox setup, safe headless options, page-load timeout integration, zero implicit wait, temporary Remember Me profile restart/cleanup exist. Chrome only is exercised in P4-05; Firefox support is unchanged and execution unrun. |
+| `BasePage` / `LoginPage` | Bounded explicit waits, page-owned selectors/actions, submission outcomes, recovery navigation/form state, dashboard/logout state, and retained-form checks exist. P4-02/P4-03 close the two identified assertion gaps; no sleeps or external-site changes. |
+| Credential guard / scenario helpers | Required mode fails when inputs are absent; optional mode skips. Invalid-password, expected-welcome, and Remember Me assertions exist. Focused tests are evidence for helper logic only, not live authentication. |
+| JUnit listeners, outcomes, logging, Extent, cleanup | Existing pass/fail/skip classification, duration/reporting, and best-effort diagnostics/cleanup are retained; original test outcome must remain authoritative. Focused lifecycle test passed per report; runtime/browser diagnostics are exercised only in P4-05. |
+| Screenshots and artifacts | Capture defaults off; selected-field redaction is not page-level sanitization. Keep off. No CI workflow or artifact policy exists. Enabling capture is outside this plan and requires page-content review plus approved artifact access/retention. |
+| Maven/Surefire, CI, docs | Surefire's `**/*Tests.java` includes browser scenarios and focused `*Tests`; `LoginPageRunner` is not selected by default. No CI workflow exists. No CI setup or artifact publication is planned; document actual local Maven evidence in Stage 6. |
+
+## Review Conditions and Risk Disposition
+
+| Finding / recommendation / condition | Disposition and evidence |
+| --- | --- |
+| R1 / C1: AC 5.1 source inline errors | P4-04. Preserve the source wording. Browser-native validation remains a project deviation only. The user accepted C1 for planning, not a PRD change or Stage 6 limitations. |
+| R2 / C2: AC 2.1 destination assertion | P4-02 adds the assertion; P4-05 verifies it in Chrome. Existing welcome/authenticated/logout checks do not substitute. |
+| R3 / C2: AC 3.1 top-of-form position | P4-03 adds a stable placement check or records an evidence-backed unresolved limitation; P4-05 verifies live behavior. |
+| R4 / C3: current required-mode Chrome evidence | P4-05. Current report is BLOCKED/NO VERDICT; historical results and focused tests are not fresh browser evidence. Required cases must execute; skips remain skips. |
+| R5 / C4: screenshot exposure | Disposition complete for this scope: capture remains disabled by default and no CI/artifact upload exists. Do not enable without page-level data and artifact handling approval. |
+| C5: evidence and browser scope | P4-05 runs Chrome only. Firefox support remains unchanged; Firefox/cross-browser, CI, performance, slow-network, dependency scan, screenshots, and reliability checks are unrun/not planned absent need and environment. |
+| Credential-source and invalid-password findings; positive config/lifecycle architecture | Existing source and focused tests cover environment-only credential/identity reads, required/optional guard, active invalid-password checks, bounded waits/timeouts, transport policy, and outcome classification. No new implementation task; verify actual scenarios only in P4-05. |
+| Recovery-flow scope (R5 in the historical review) | Existing recovery navigation checks destination URL, reset form visibility, and unauthenticated state. Keep claim limited to navigation/form presence; no reset submission/completion task. |
+
+Principal risks are missing authorized runtime values/account, Chrome or compatible driver availability, live-site/network availability, unstable application markup for AC 3.1 placement, and unavailable requirements-owner action for AC 5.1. Provide credentials only through the test process environment and never expose values. A missing prerequisite means blocked/unrun or an accurately classified required-mode failure, never a pass. Screenshots stay disabled.
+
+## Stage 6 Gate and Success Criteria
+
+- **PASS:** Required Chrome verification executes all required cases with zero failures, errors, or skips, and every source criterion is met, including application-rendered inline feedback for AC 5.1, the AC 2.1 destination, and AC 3.1 notice position.
+- **PASS WITH LIMITATIONS:** Executed checks have zero failures/errors but a required case is skipped or a requirement is unmet/unverified. The report must list each item, reason, impact, and follow-up. Obtain fresh explicit human acceptance before Stage 7; the 2026-10-14 C1-C5 planning acceptance does not qualify.
+- **FAIL:** An executed check fails or errors, including a required-mode credential guard failure. Stage 7 is blocked until scoped correction and rerun.
+- **BLOCKED / NO VERDICT:** Required Chrome cannot run because browser/driver, site/network, or authorized runtime prerequisites are unavailable. Do not substitute historical outcomes or label the blocker PASS WITH LIMITATIONS.
+
+No CI, Firefox, cross-browser, performance, slow-network, repeatability, security-scan, or screenshot result may be claimed unless actually run. Stage 4 produces an implementation-ready bounded plan for P4-02/P4-03 and subsequent Stage 6 verification, with AC 5.1 explicitly retained as a source-compliance gate. This document does not authorize implementation or proceed to Stage 5.
+
+---
+
+# Superseded Plan Snapshot (Retained for Reconciliation)
+
+The previous working-plan text follows unchanged as historical context. Its task count, status, estimates, requirements/architecture mapping, and Stage 6 statements are superseded by the refreshed plan above. Retain this snapshot for audit history; do not execute it as the current plan.
+
+# Stage 4 Implementation Plan — Previous Status (2026-10-14)
 
 ## Context and Authority
 
@@ -7,34 +105,35 @@
 | Scope | Java 21 / Maven / Selenium test framework for `US-AUTH-002`; no changes to the external login site. |
 | Requirements | Fresh source recheck dated 2026-10-09; Confluence page 11796481, version 2, as recorded in [requirements](requirements.md). |
 | Architecture | Updated [architecture](architecture.md), approved by the user on 2026-10-09. |
-| Design review | Fresh [Stage 3 review](design-review.md), conditions explicitly accepted by the user on 2026-10-09. |
-| Inspected baseline | Current Java/tests, [pom.xml](../../pom.xml), [workflow](../../.github/workflows/selenium-login.yml), [workflow guide](../../.github/workflows/selenium-login-workflow.md), [README](../../README.md), and repository instructions. Static inspection only; no test or browser run for this plan. |
-| Planned tasks | 2 remaining tasks; estimated 6 engineer-hours: 1 Medium (2 h), 1 Large (4 h). Browser execution and external waiting are approximate/excluded from engineering estimate. |
-| Gate status | Stage 4 planning authorized. Stage 5 has not started and is not authorized by this plan. |
+| Design review | Fresh [Stage 3 review](design-review.md), dated 2026-10-09. The user explicitly accepted fresh conditions C1-C5 on 2026-10-14, authorizing Stage 4 planning. This acceptance does not accept Stage 6 limitations. |
+| Verification evidence | [Verification report](verification-report.md), dated 2026-10-09: Chrome browser class had 9 cases, 6 passed and 3 skipped (TS-LOG-001/002/005) in optional credential mode. No successful required-mode Chrome run is recorded. Treat this as historical evidence, not a fresh run. |
+| Inspected baseline | Current Java/tests, [pom.xml](../../pom.xml), [README](../../README.md), and repository instructions. The current repository has no `.github/workflows/` directory or configured CI. |
+| Planned items | 2 total: 1 Medium (P4-01, 2 h, complete) and 1 Large (P4-02, 4 h, open for Stage 6). Original estimate 6 engineer-hours; 4 hours remain, excluding external waiting and browser runtime. |
+| Gate status | Stage 4 planning is authorized by the user's 2026-10-14 acceptance. No Stage 5 source/test work remains under this plan; Stage 6 verification is still outstanding. |
 
-This is the authoritative plan for the restarted workflow. All earlier task breakdowns and status narratives are retained below under a superseded archive heading; they are historical only and must not be used as current implementation instructions or test evidence. No earlier pipeline test outcome is adopted as current evidence. The worktree's pre-existing untracked plan copy and staged deletion state are preserved; no staging, commit, reset, cleanup, branch, merge, or remote operation is part of this work.
+This is the authoritative plan for the restarted workflow. The fresh Stage 3 section still says its human gate is pending; this plan records the user's subsequent explicit acceptance of C1-C5 on 2026-10-14, which resolves that gate for Stage 4 planning only. It does not rewrite the review artifact, accept Stage 6 limitations, or convert skips or unmet requirements into passes. All earlier task breakdowns and status narratives below are archival only and are superseded by this status and task list. Historical test outcomes are not fresh execution evidence.
 
 ## Current Baseline and Decisions
 
-Current source already provides environment-only valid credentials and expected welcome identity, required-versus-optional credential guards, active invalid-password/unknown-user assertions, a strict identity comparison for TS-LOG-001, bounded page and explicit wait timeouts, zero implicit wait, fresh Chrome/Firefox drivers, a temporary Remember Me profile, recovery URL and form checks, lifecycle pass/fail/skip reporting, Extent output, and opt-in screenshots disabled by default. No missing configuration/data framework, dependency, or broad source refactor is planned.
+Current source already provides environment-only valid credentials and expected welcome identity, required-versus-optional credential guards, active invalid-password/unknown-user assertions, a strict identity comparison for TS-LOG-001, bounded page and explicit wait timeouts, zero implicit wait, fresh Chrome/Firefox drivers, a temporary Remember Me profile, recovery URL and form checks, lifecycle pass/fail/skip reporting, Extent output, and opt-in screenshots disabled by default. P4-01 is implemented: after restarting Chrome with the same profile, the Remember Me scenario asserts nonblank dashboard content and visible logout; the helper has three focused unit tests. The 2026-10-09 report records those focused tests passing, but TS-LOG-005 itself skipped before login, so persistence remains unverified. No additional implementation task, dependency, or broad source refactor is planned.
 
-The following four conditions govern the implementation and verification:
+The user's acceptance of C1-C5 permits Stage 4 planning and carries these dispositions forward; it does not approve Stage 6 limitations:
 
 1. **FR-2 remains a project deviation, not source fulfillment.** The PRD still requires application-rendered inline required-field errors. Existing TS-LOG-004/007/008 check browser-native validity; the accepted deviation does not satisfy or rewrite the PRD wording. Do not silently add site changes or relabel native validation as source compliance.
 2. **Fresh Chrome evidence is required for TS-LOG-001, TS-LOG-002, and TS-LOG-005.** These outcomes have not been observed in this restarted workflow. Use required credential mode and classify every result as passed, failed, skipped, or unrun. A skip is never a pass.
-3. **Strengthen the Remember Me post-restart oracle before final verification.** The current test relies on `isLoggedIn()`, which can return true for generic dashboard text. Require dashboard content and a visible logout control after restarting with the same temporary profile.
-4. **Keep failure screenshots disabled.** Current default and workflow do not enable capture; selected-field redaction is not page-level sanitization. Do not enable capture or share screenshots until page-level content and artifact access/retention receive explicit safety review.
+3. **Remember Me oracle implemented; live behavior unverified.** P4-01 now requires dashboard content and visible logout after restarting with the same temporary profile. Only a fresh browser run can establish persistence.
+4. **Keep failure screenshots disabled.** Capture defaults off; no CI workflow or artifact upload is configured. Selected-field redaction is not page-level sanitization. Do not enable capture or share screenshots until page-level content and artifact access/retention receive explicit safety review.
 
 ## Remaining Tasks
 
-| ID | Task and deliverables | Priority / complexity / effort | Dependencies | Measurable acceptance criteria |
+| ID | Task and deliverables | Status; priority / complexity / effort | Dependencies | Measurable acceptance criteria / closure evidence |
 | --- | --- | --- | --- | --- |
-| P4-01 | Strengthen TS-LOG-005 after browser restart using the existing scenario-assertion pattern. Assert account dashboard content and a visible logout control; do not let generic “hello” text alone establish authentication. Add focused unit coverage for any new assertion helper and preserve privacy-safe diagnostics. | P1 / Medium / 2 h | None | A focused helper test rejects missing dashboard content or missing logout visibility and accepts both signals. The browser scenario applies that assertion only after restarting Chrome with the same temporary profile. No credential or account identity is added to literals, assertion messages, logs, reports, or artifacts. Driver teardown/profile cleanup remain unchanged and best-effort cleanup cannot mask the test result. |
-| P4-02 | Run and document the complete required-mode Chrome verification after P4-01. Do not run Firefox, alter the Firefox path/matrix, or infer runtime success from CI configuration or retained reports. Deliver exact command, Java/Maven/Chrome/driver versions, test counts by outcome, and the observed Surefire report/artifact locations in the Stage 6 report. | P0 / Large / 4 h | P4-01 | Run `mvn --batch-mode test -Dbrowser=chrome -Dheadless=true -DrequireCredentialTests=true` with `LOGIN_VALID_USERNAME`, `LOGIN_VALID_PASSWORD`, and `LOGIN_EXPECTED_WELCOME` supplied only in the Maven process environment/approved secret store. Check presence without reading or printing values. TS-LOG-001, TS-LOG-002 (known username), and TS-LOG-005 must be observed as executed or explicitly reported as skipped/unrun; never count a skip as pass. Record all suite pass/fail/error/skip counts and distinguish the FR-2 project deviation from the unmet source criterion. Keep Firefox/cross-browser and CI execution explicitly unrun unless independently executed. |
+| P4-01 | Strengthen TS-LOG-005 after browser restart using the existing scenario-assertion pattern. Assert account dashboard content and visible logout; generic “hello” text alone cannot establish authentication. Add focused helper coverage and preserve privacy-safe diagnostics. | **Complete**; P1 / Medium / 2 h | None | Current `LoginScenarioAssertions.assertRememberMeSession` requires nonblank dashboard text and visible logout, and `shouldPersistSessionWhenRememberMeIsEnabled` calls it after restart with the same profile. `LoginScenarioAssertionsTests` contains three tests; the 2026-10-09 report records all three passing. This closes the implementation task only. Live TS-LOG-005 remains unverified because it skipped before login. |
+| P4-02 | Perform and document fresh required-mode Chrome verification. Do not run Firefox, alter Firefox support, or infer runtime success from configuration or retained reports. Record exact command, Java/Maven/Chrome/driver versions, outcome counts, and Surefire report locations in the Stage 6 report. | **Open; Stage 6**; P0 / Large / 4 h | P4-01 complete | When browser, site/network, and approved runtime values are available, run `mvn --batch-mode test -Dbrowser=chrome -Dheadless=true -DrequireCredentialTests=true` with `LOGIN_VALID_USERNAME`, `LOGIN_VALID_PASSWORD`, and `LOGIN_EXPECTED_WELCOME` supplied only through the Maven process environment/approved secret store. Check presence without reading or printing values. TS-LOG-001, TS-LOG-002 (known username), and TS-LOG-005 must execute; record any failure, skip, or blocker accurately and never count a skip as a pass. Report the complete suite counts and keep FR-2 source inline errors distinct from the project-native-validation deviation. Firefox/cross-browser and CI remain unrun unless actually exercised. |
 
 ### Order and Dependencies
 
-The dependency graph is acyclic: `P4-01` → `P4-02`. Implement and focused-test the Remember Me assertion first, then perform Chrome verification. Screenshot capture remains disabled throughout; no page-level review or enablement is authorized by these tasks. FR-2 source wording remains unchanged and is reported as a limitation unless source behavior is independently met and evidenced.
+The dependency graph is acyclic: completed `P4-01` → open `P4-02`. The implementation and focused tests are already present; the only remaining item is Chrome verification in Stage 6. Screenshot capture remains disabled; no page-level review or enablement is authorized. FR-2 source wording remains unchanged and unmet by the accepted browser-native project deviation.
 
 ## Architecture and Existing-Work Disposition
 
@@ -43,12 +142,12 @@ The dependency graph is acyclic: `P4-01` → `P4-02`. Implement and focused-test
 | `TestConfig` / `TestData` | Runtime precedence, HTTPS/local-HTTP guard, bounded positive page-load timeout, environment-only valid credentials and expected identity, test data tokens, and focused config tests exist. No new configuration or data abstraction. |
 | `BaseTest` driver lifecycle | Fresh Chrome/Firefox setup, headless options, page-load timeout, zero implicit wait, teardown, temporary Remember Me profile and restart exist. Keep the existing browser support and cleanup behavior; exercise Chrome only in P4-02. |
 | `BasePage` / `LoginPage` | Bounded explicit waits and page-object ownership of controls, feedback, authentication state, and recovery navigation exist. Do not add sleeps or change the external site. |
-| Scenario suite | TS-LOG-001 through TS-LOG-008 and AC-UI-001 are represented. TS-LOG-001 has an expected-identity comparison; TS-LOG-002 has active negative assertions; TS-LOG-003 checks unknown-user feedback; TS-LOG-004/007/008 cover the accepted native-validation deviation; TS-LOG-006 checks recovery URL, visible reset form, and unauthenticated state. P4-01 is the identified scenario gap; all scenarios receive fresh Chrome evidence in P4-02. |
+| Scenario suite | TS-LOG-001 through TS-LOG-008 and AC-UI-001 are represented. TS-LOG-001 has an expected-identity comparison; TS-LOG-002 has active negative assertions; TS-LOG-003 checks unknown-user feedback; TS-LOG-004/007/008 cover the accepted native-validation deviation; TS-LOG-006 checks recovery URL, visible reset form, and unauthenticated state. P4-01's implementation gap is closed; P4-02 is the only remaining task and supplies fresh Chrome evidence. |
 | Credential guard / scenario assertions | Missing credentials fail in required mode and abort in optional mode; helpers assert invalid-password outcomes and customer-identifying welcome without exposing configured identity. Add only Remember Me assertion coverage under P4-01. |
 | Suite / Maven Surefire | The `**/*Tests.java` include selects browser scenarios and focused unit test classes; `LoginPageRunner` is a separate suite entry and is not the standard `mvn test` selection. Preserve current discovery and report the actual selected counts from P4-02. |
 | Listeners, outcomes, logging, Extent | Lifecycle/report code classifies aborts as skips, records outcomes, and uses redacted diagnostics. Existing focused lifecycle coverage remains in place; no report refactor absent a demonstrated defect. Inspect generated reports as verification evidence, not as prior results. |
-| Screenshot utility / artifacts | `allowFailureScreenshots()` defaults false; the workflow does not set it true; workflow uploads only existing failure screenshots conditionally. Selected input redaction does not establish whole-page safety. Keep capture disabled; a later enablement requires page-level data and artifact access/retention approval. |
-| CI and documentation | Java 21, serial Chrome/Firefox matrix, required credential mode, and artifact upload are configured. Configuration is not runtime evidence. Leave workflow and Firefox support unchanged; current verification policy is Chrome-only. |
+| Screenshot utility / artifacts | `allowFailureScreenshots()` defaults false. No CI workflow or artifact upload is configured. Selected input redaction does not establish whole-page safety. Keep capture disabled; a later enablement requires page-level data and artifact access/retention approval. |
+| CI and documentation | No GitHub Actions workflow or CI jobs are configured. Run Maven checks locally; do not claim a CI matrix, secret mapping, or artifact upload. Preserve the existing Chrome/Firefox driver support; current browser verification policy is Chrome-only. |
 
 ## Requirements Traceability
 
@@ -56,9 +155,9 @@ The dependency graph is acyclic: `P4-01` → `P4-02`. Implement and focused-test
 | --- | --- |
 | FR-1 / AC-UI-001; control checks in TS-LOG-004/005/006 | Existing page object and UI assertions cover username, password, Remember Me, login, and recovery controls. Run in P4-02. |
 | FR-2 / TS-LOG-004, TS-LOG-007, TS-LOG-008 | Existing tests exercise browser-native required-field validity. This is the approved project deviation only; source inline-error behavior remains unmet/unverified. Report separately; do not claim source fulfillment. |
-| FR-3 / TS-LOG-001 | Existing required expected-identity comparison plus authenticated/dashboard/logout assertions. Fresh required-mode Chrome outcome in P4-02; no earlier run is carried forward. |
+| FR-3 / TS-LOG-001 | Existing required expected-identity comparison plus authenticated/dashboard/logout assertions. The 2026-10-09 run skipped this case; P4-02 must record a fresh required-mode Chrome outcome. |
 | FR-4 / TS-LOG-002, TS-LOG-003 | Active invalid-password and unknown-user feedback, unauthenticated, and retained-form assertions exist. TS-LOG-002 requires a known username. Run both in P4-02. |
-| FR-5 / TS-LOG-005 | Temporary profile restart exists. P4-01 adds dashboard-plus-visible-logout assertion after restart; P4-02 observes actual Chrome persistence. |
+| FR-5 / TS-LOG-005 | Temporary profile restart and P4-01 dashboard-plus-visible-logout assertion are implemented and focused-tested. The 2026-10-09 browser case skipped before login; P4-02 must observe actual Chrome persistence. |
 | FR-6 / TS-LOG-006 | Existing supported recovery URL, visible reset form, and unauthenticated checks provide navigation/form-presence evidence only. Run in P4-02; do not claim reset completion/usability beyond observed checks. |
 | US-AUTH-002 | Mapped across FR-1..FR-6. End-to-end result depends on fresh Chrome execution and the source/project distinction for FR-2. |
 | NFR-1 | PRD has no measurable security or performance target. Add no SLA, performance, slow-network, security-scan, or reliability claim. Credential and screenshot safeguards remain as specified. |
@@ -67,15 +166,15 @@ The dependency graph is acyclic: `P4-01` → `P4-02`. Implement and focused-test
 
 | Condition / risk | Disposition |
 | --- | --- |
-| C1 / FR-2 source versus deviation | Accepted for this project on 2026-10-09. Preserve the PRD inline-error requirement; native validation is not its fulfillment. This remains a possible Stage 6 limitation. |
-| C2 / unverified TS-LOG-001, TS-LOG-002, TS-LOG-005 | Accepted on 2026-10-09. P4-02 requires fresh Chrome evidence. A required-mode credential guard failure is a failure, not a skip or pass; any actual skip is reported with reason, impact, and follow-up. |
-| C3 / Remember Me oracle | Accepted on 2026-10-09. P4-01 requires dashboard content plus visible logout after restart; do not rely solely on permissive generic `isLoggedIn()` text. |
-| C4 / screenshot exposure | Accepted on 2026-10-09. Capture remains disabled pending page-level safety and artifact handling review. No authenticated screenshots are requested or planned. |
-| C5 / browser evidence boundary | Accepted on 2026-10-09. Run Chrome only. Firefox support and its workflow matrix stay unchanged; Firefox/cross-browser and CI execution are unrun unless separately observed. |
+| C1 / FR-2 source versus deviation | Explicitly accepted by the user on 2026-10-14 for Stage 4 planning. Preserve the PRD inline-error requirement; native validation is not its fulfillment. This is not Stage 6 limitation acceptance. |
+| C2 / unverified TS-LOG-001, TS-LOG-002, TS-LOG-005 | Explicitly accepted on 2026-10-14 for planning. The 2026-10-09 optional-mode run recorded 3 skips; no successful required-mode Chrome run exists. P4-02 requires fresh evidence. Required-mode guard failure is a failure, never a pass. |
+| C3 / Remember Me oracle | Explicitly accepted on 2026-10-14 for planning. P4-01 is implemented and focused-tested; live persistence remains unverified until P4-02. |
+| C4 / screenshot exposure | Explicitly accepted on 2026-10-14 for planning. Capture remains disabled pending page-level safety and artifact handling review. No authenticated screenshots are requested or planned. |
+| C5 / browser evidence boundary | Explicitly accepted on 2026-10-14 for planning. Run Chrome only. Firefox support remains unchanged; Firefox/cross-browser and CI execution are unrun. |
 | Recovery-page evidence (R5) | Existing TS-LOG-006 checks both destination URL and reset-form visibility. Keep claims limited to navigation and form presence; no reset submission task. |
 | Credential-source / invalid-password findings closed in current code | Environment-only secret reads, required/optional guard behavior, and active negative assertions are present with focused tests. Do not reschedule already implemented fixes as new work; P4-02 supplies fresh scenario evidence. |
 
-Principal execution risks are unavailable Chrome/driver resolution, network/site availability, missing approved credentials/expected identity, and account access. Provide secrets only to the process environment and never echo them. An unavailable prerequisite means verification is blocked/unrun, not passed. `ALLOW_FAILURE_SCREENSHOTS` must remain unset/false.
+Principal execution risks are unavailable Chrome/driver resolution, network/site availability, missing approved credentials/expected identity, and account access. The 2026-10-09 report states that the required runtime values were unavailable to Maven. Provide secrets only to the process environment and never echo them. An unavailable prerequisite means verification is blocked/unrun, not passed. `ALLOW_FAILURE_SCREENSHOTS` must remain unset/false. The prior 2026-10-09 acceptance of that report's Stage 7 limitations does not accept limitations for the current Stage 6 gate.
 
 ## Stage 6 Gate and Success Criteria
 
@@ -84,7 +183,7 @@ Principal execution risks are unavailable Chrome/driver resolution, network/site
 - **FAIL:** Any executed test failure or error, including required-mode credential guard failure, blocks Stage 7 and requires a scoped fix and rerun. Never count a required skip as a pass.
 - **Blocked / no verdict:** If Chrome, site/network, or authorized runtime configuration prevents the suite from running, do not label it PASS or PASS WITH LIMITATIONS; report the blocker and leave Stage 7 unavailable.
 
-Stage 4 planning is complete when this task sequence, architecture disposition, risk handling, traceability, and gates are accepted. P4-01 is the only planned source/test change; P4-02 belongs to Stage 6 verification. No source code, tests, CI, or workflow were changed by this planning task. No Stage 5 handoff is issued here.
+Stage 4 planning is complete: the task sequence, architecture disposition, risk handling, traceability, and gates are recorded, and the user accepted fresh C1-C5 on 2026-10-14. P4-01's source/test implementation is already complete; no further Stage 5 code task is open under this plan. P4-02 is the sole remaining Stage 6 verification item. The 2026-10-09 verification report is historical, records 6 passed/3 skipped Chrome cases in optional mode, and does not establish a successful required-mode run. Do not claim Stage 6 limitations are accepted: fresh explicit human acceptance is required before Stage 7 if its rules call for it. Firefox/cross-browser and CI remain unrun, screenshots remain disabled, and FR-2's source inline-error criterion remains unmet. This Stage 4 documentation update does not run tests or change source, tests, or configuration.
 
 ---
 

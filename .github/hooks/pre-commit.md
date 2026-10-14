@@ -31,9 +31,10 @@ project.
    relative Markdown links and confirm the staged document does not introduce
    credential values or claim unrun test results.
 
-The full Selenium suite is not part of this pre-commit hook by default because
-it can require a browser, live-site access, and runtime credentials. Use the
-GitHub Actions workflow and Stage 6 verification process for those checks.
+The full Selenium suite is not part of this proposed pre-commit hook by default
+because it can require a browser, live-site access, and runtime credentials.
+Run applicable Maven checks locally and follow the Stage 6 verification
+process. No GitHub Actions workflow is currently configured.
 
 ## Exit behavior
 
@@ -58,4 +59,5 @@ GitHub Actions workflow and Stage 6 verification process for those checks.
 If this specification is later implemented as an executable hook, keep the
 script in an explicitly agreed hook location, document installation and
 opt-out behavior, and keep the check commands aligned with
-`copilot-instructions.md`, `pom.xml`, and `.github/workflows/`.
+`copilot-instructions.md` and `pom.xml`. If CI is introduced later, keep its
+configuration aligned with the documented checks.

@@ -13,13 +13,24 @@ class LoginScenarioAssertionsTests {
     @Test
     void invalidPasswordAssertionRejectsMissingOrInsufficientEvidence() {
         assertDoesNotThrow(() -> LoginScenarioAssertions.assertInvalidPasswordOutcome(
-                "Incorrect password", false, true));
+                "Incorrect password", false, true, true));
+        assertDoesNotThrow(() -> LoginScenarioAssertions.assertInvalidPasswordOutcome(
+                "Error: The password you entered for the username [account] is incorrect", false, true, true));
         assertThrows(AssertionFailedError.class, () -> LoginScenarioAssertions.assertInvalidPasswordOutcome(
-                "", false, true));
+                "", false, true, true));
         assertThrows(MultipleFailuresError.class, () -> LoginScenarioAssertions.assertInvalidPasswordOutcome(
-                "Incorrect password", true, true));
+                "Incorrect password", true, true, true));
         assertThrows(MultipleFailuresError.class, () -> LoginScenarioAssertions.assertInvalidPasswordOutcome(
-                "Incorrect password", false, false));
+                "Incorrect password", false, false, true));
+        assertThrows(MultipleFailuresError.class, () -> LoginScenarioAssertions.assertInvalidPasswordOutcome(
+                "Incorrect password", false, true, false));
+    }
+
+    @Test
+    void myAccountDestinationAssertionRejectsMissingDashboardSignal() {
+        assertDoesNotThrow(() -> LoginScenarioAssertions.assertMyAccountDashboard(true));
+        assertThrows(AssertionFailedError.class,
+                () -> LoginScenarioAssertions.assertMyAccountDashboard(false));
     }
 
     @Test

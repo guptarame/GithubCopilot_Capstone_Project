@@ -77,9 +77,9 @@ rules, skills, handoff, and workflow documentation.
 - **Agent:** `verification-agent`; **input:** implementation, requirements,
   plan, and available environment; **output:**
   `docs/sdlc/verification-report.md`.
-- Run browser verification in Chrome only; leave existing Firefox support and
-  CI configuration unchanged, and report Firefox/cross-browser coverage as
-  unrun.
+- Run browser verification in Chrome only; leave existing Firefox support
+  unchanged. No CI workflow is currently configured; report CI as absent and
+  Firefox/cross-browser coverage as unrun.
 - A `PASS` permits Stage 7 when every required test executed with zero
   failures, errors, or skips and all source requirements are met. A `FAIL`
   blocks Stage 7; coordinate a scoped fix with implementation and rerun the

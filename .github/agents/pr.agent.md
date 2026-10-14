@@ -17,13 +17,14 @@ Own Stage 7: prepare and create the pull request after verification. Follow
 
 Read the current Git/repository state, changed files and recent commit history,
 requirements, architecture, implementation plan, design review,
-`docs/sdlc/verification-report.md`, and relevant `pom.xml`/workflow context.
+`docs/sdlc/verification-report.md`, and relevant `pom.xml`/CI context if
+present. This repository currently has no configured CI workflow.
 This repository tests an external login site. Ensure the PR concerns framework
 changes only.
 
 For any browser-driven validation this agent executes, use Chrome only. Do not
-launch Firefox or change existing Firefox support or CI configuration. Report
-Firefox and cross-browser coverage as unrun unless a current verification
+launch Firefox or change existing Firefox support. Report CI as not configured
+and Firefox/cross-browser coverage as unrun unless a current verification
 report provides independently observed evidence.
 
 ## Readiness and safety

@@ -20,8 +20,10 @@ report evidence and limits, never assumed success.
   Chrome only when relevant and the site/runtime are available; do not launch
   Firefox or change its existing support. Report Firefox/cross-browser
   coverage as unrun.
-- Supply credentials only through runtime environment/CI secrets; never include
-  values in source, commands, logs, screenshots, or reports. Record exact
+- Supply credentials only through runtime environment variables; no CI
+  workflow is currently configured. If CI is added, use its secret store.
+  Never include values in source, commands, logs, screenshots, or reports.
+  Record exact
   commands, environment, totals, failures, and skips; a credential-dependent
   skip is not a pass.
 - Assess Chrome coverage, repeatability, duration, slow-network behavior,

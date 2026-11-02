@@ -1,3 +1,135 @@
+## Current Disposition — 2026-11-03
+
+The architecture was approved at 00:33 (+05:30). The source-baseline limitation was explicitly accepted at 00:39; this does not independently verify the current Confluence page or its removal of the former criterion. Stale architecture approval metadata was corrected. M1 and M2 are resolved or explicitly accepted for planning. Stages 4, 5, and 6 are complete; Stage 6 **PASS WITH LIMITATIONS** was accepted at 00:57. Focused verification reports 28 tests passed, zero failures, errors, or skips. All 9 Chrome scenarios remain **UNRUN**; no live-site behavior is claimed. The current Confluence source removal remains independently unverified. S1–S4 are recorded as completed focused work in the current plan/verification; live evidence remains unrun.
+
+# Stage 3 — Independent Design Review
+
+## Metadata and Executive Summary
+
+| Item | Value |
+|---|---|
+| Reviewed | 2026-11-03 |
+| Stage | 3 — Independent review of the proposed test-framework architecture |
+| Inputs | `docs/sdlc/requirements.md`, the fresh proposal at the top of `docs/sdlc/architecture.md`, existing Java test/framework code, `pom.xml`, README, repository instructions and orchestrator |
+| Architecture approval | The orchestrator supplied the user's explicit “yes” at 2026-11-03 00:33 as authorization for this review. The architecture document itself still says “awaiting explicit human approval”; see F2. |
+| Scope boundary | Selenium test automation only. The external login application/authentication service is not reviewed or changed. |
+| Method and evidence | Static inspection only. No tests, browser, target-site, network, dependency scan, security assessment, performance test, or GitHub/CI operation was performed. No credentials were accessed. No CI workflow or `src/test/resources` directory was found. |
+| Verdict | **APPROVED WITH CONDITIONS** |
+
+The proposed component boundaries and local sequential Selenium design fit the existing code. The revised requirements artifact maps to three source scenarios (TS-LOG-001..003), with the controls and recovery navigation also traceable to AC 1.1–1.4. The design correctly treats browser-native blank-field validation as a supplementary project regression, not fulfillment of the former AC 5.1.
+
+The most important qualification is provenance: requirements.md records a **user-reported** removal of AC 5.1 and TS-LOG-004. The current Confluence page/version/date was not independently verified. This review evaluates coverage against the revised requirements artifact; it does not attest that artifact to be the current Confluence source. The architecture file also retains a stale “awaiting approval” status despite the approval supplied to the orchestrator. Resolve or explicitly accept these governance limitations before planning. Neither issue is evidence of application behavior.
+
+**Counts:** 0 critical findings; 1 high-severity source-baseline risk; 4 medium findings; 2 planning-gate conditions; 4 should-fix recommendations; 2 nice-to-have recommendations. The high risk is the unverified source revision, not a finding that a removed criterion remains active.
+
+## Requirements and Scenario Coverage
+
+“Designed” below means that an observable check or explicit supplementary-test boundary exists in the design/code. It does **not** mean the live behavior passed. No source scenario was exercised during this review.
+
+| Requirement / scenario in the current requirements artifact | Design and inspected-code trace | Review disposition |
+|---|---|---|
+| FR-1 / AC 1.1: username/email and password fields | `LoginPage` owns `id=username` and `id=password`; `LoginPageTests.shouldDisplayAllRequiredLoginElements` checks visibility. | Designed. Live visibility is unverified. |
+| FR-1 / AC 1.2 and FR-5: Remember Me control | `LoginPage` owns the checkbox; the UI test checks visibility. TS-LOG-005 checks selection and restart persistence. | Checkbox presence is covered. Restart persistence is **supplementary only**: the source read documented no persistence duration or browser-restart guarantee. Do not use TS-LOG-005 to claim source acceptance. Live behavior is unverified. |
+| FR-1 / AC 1.3: visible and clickable Log in control | The UI test checks visibility; login scenarios submit through the page object's explicit-wait click action. | Design represents visibility and interaction. No live click was observed in this review. |
+| FR-1 / AC 1.4 and FR-6: Lost your password? navigates to reset flow | Supplementary TS-LOG-006 activates the link and checks a supported recovery URL, reset-form visibility, and unauthenticated state. | Navigation is represented although no dedicated source scenario is listed. It does not test reset submission/completion; that is not required by the current artifact. Live behavior is unverified. |
+| FR-3 / AC 2.1–2.2 / TS-LOG-001: valid login, dashboard destination and welcome message | Credential/expected-identity guards; `LoginPage.isMyAccountDashboardVisible` checks the configured account-home URL and dashboard areas; assertions check authentication, logout and the expected welcome identity. | Static coverage is coherent and destination assertion is present. Requires authorized runtime credentials and live verification; none occurred here. |
+| FR-4 / AC 3.1 / TS-LOG-002: incorrect password, remain unauthenticated, error notice at top of form | The known-username guard and shared assertion check message tokens, unauthenticated state, retained form and `isErrorNoticeAtTopOfLoginForm`. That position check compares rendered element geometry. | Designed. The geometric assertion is stronger than visibility alone, but live layout/message behavior is unverified. |
+| FR-4 / AC 4.1 / TS-LOG-003: unregistered account, account-does-not-exist error and remain on login page | Test checks configured error tokens, unauthenticated state and retained login form. | Behavioral coverage is represented. Some accepted tokens are broad (including “invalid username” and “not found”); confirm they cannot accept an unrelated error before source acceptance. Live behavior is unverified. |
+| NFR-1: performance/security measures unspecified | Architecture sets no invented thresholds and describes credential, transport, wait and artifact safeguards. | Appropriate boundary. No performance, security, reliability, or slow-network behavior was tested or established. |
+| US-AUTH-002, constraints and dependencies | The design models the external login page as an integration boundary and identifies network, supported local browser and account/runtime prerequisites. | Appropriate scope. Account/site availability and environment assumptions remain unverified. |
+| Reported removed AC 5.1 / TS-LOG-004; remaining blank-field tests | The current code still displays “TS-LOG-004” on a native-validation test and “TS-LOG-007/008” for single-field checks. The proposal explicitly classifies these as supplementary and says native browser validation is not application-rendered inline feedback. | Correctly excluded from the active source inventory. The legacy label remains a traceability hazard; do not describe these checks as satisfying the former AC 5.1. The source removal itself is user-reported, not independently verified. |
+| Current source scenario inventory | Requirements artifact lists TS-LOG-001, TS-LOG-002 and TS-LOG-003. | All three were checked against the proposal and test code. Recovery/control-visibility and Remember Me restart checks are project regressions, not additional source scenarios. No scenario was run in this review. |
+
+## Findings
+
+| ID / severity | Finding and impact | Classification |
+|---|---|---|
+| F1 / High | **The source delta is not independently verified.** Requirements.md and the architecture use the user's report that AC 5.1 and TS-LOG-004 were removed; the updated Confluence version/date was unavailable. The architecture is internally clear that this is a reported baseline, but a plan or acceptance claim based on a different current page could omit a material criterion. | Source-baseline limitation; planning/acceptance gate |
+| F2 / Medium | **The architecture's approval state is contradictory.** Its current proposal opens with “Proposed; awaiting explicit human approval,” while the orchestrator reports a fresh “yes” on 2026-11-03. The later approval text in the file is dated 2026-10-14 and belongs to superseded historical material. This can cause downstream agents to treat the approved input as unapproved or rely on an obsolete approval. | Governance/documentation gap; planning gate |
+| F3 / Medium | **Legacy scenario IDs can misstate current traceability.** The current browser test still labels native required-field checks TS-LOG-004/007/008 even though the current artifact inventory excludes TS-LOG-004 and the architecture says those are project-only regressions. Its display-name caveat helps, but reports and historical summaries may still count it as a source scenario. | Implementation/documentation gap |
+| F4 / Medium | **Unregistered-account message matching needs source-semantic confirmation.** `UNKNOWN_USER_MESSAGE_TOKENS` accepts several broad phrases, including “invalid username” and “not found.” A generic or unrelated error might pass without demonstrating the source's account-does-not-exist meaning. The requirements artifact itself leaves exact-versus-illustrative wording open. | Assertion/testability gap |
+| F5 / Medium | **Driver initialization has a cleanup edge case.** `BaseTest.createDriver` constructs a local driver and configures it before returning it to the `driver` field. If configuration throws after browser creation, `@AfterEach` may have no field reference to quit. Temporary-profile deletion is best-effort and silently ignores deletion failures, which could leave session material behind. This is an inspected-code risk; it was not exercised. | Implementation/lifecycle gap |
+| F6 / Low-Medium | **Opt-in screenshots and local reports still need artifact discipline.** Selected form fields are redacted, but page content can include personal/account data. Capture is off by default and the architecture explicitly warns that redaction is not page sanitization; no CI upload or retention policy exists. | Residual data-handling risk; architecture mitigation is appropriate |
+
+### Findings by Design Area
+
+- **Boundaries and maintainability:** Selectors/actions reside in `LoginPage`, shared browser operations in `BasePage`, driver lifecycle in `BaseTest`, configuration in `TestConfig`, and assertions in test helpers. These boundaries match the existing package layout. No site implementation or new dependency is proposed.
+- **Waits and error propagation:** `BasePage` uses bounded explicit waits and `TestConfig` sets implicit wait to zero; page-load and explicit waits default to 10 seconds. Submission waits use `wait.until`, so timeout failure is visible. `waitForCondition` converts timeout to `false`; current callers subsequently assert the required state, but future callers must not ignore that return. Slow-network tolerance is not measured.
+- **Isolation and lifecycle:** New drivers are normally created per browser test and quit in `@AfterEach`; the persistent profile is scoped to the Remember Me regression. Sequential execution is explicit. Profile cleanup and diagnostics are best-effort. The partial-initialization path in F5 merits hardening; parallel safety is neither claimed nor required.
+- **Configuration and credential safety:** Valid username/password and expected welcome identity are environment-only; optional credential-dependent scenarios abort as skips and required mode fails visibly. HTTPS is required except explicitly allowed local HTTP. This is a sound design. Static code shows `LogUtil` redacts username/password but not expected welcome identity; current assertions/report metadata do not appear to emit that identity. Keep it out of all diagnostics and include it in any future redaction design if it could be logged.
+- **Logs, screenshots, reports and artifacts:** Extent/Surefire output is local by default; screenshot capture is opt-in. Screenshots are taken on failure and redact selected inputs, not arbitrary page content. The architecture appropriately forbids assuming the rest of the page is safe. Artifact retention, upload and external sharing are not configured.
+- **Browsers, headless, Maven and CI:** Code contains local Chrome/Firefox and headless paths; this is capability, not run evidence. `pom.xml` scopes Selenium, WebDriverManager, JUnit and ExtentReports to tests and Surefire 3.5.0 selects `**/*Tests.java`; the browser `LoginPageTests` matches, while `LoginPageRunner` does not. No dependency scan or browser run was done. No `.github/workflows/` or configured CI is present; therefore no CI secret/artifact behavior is claimed. Browser expansion, grids, parallelism and extra report formats are optional and not recommended for this scope.
+- **NFRs and scalability:** The source has no measurable performance/security threshold. The local sequential architecture makes no scale, parallel, latency or reliability guarantee. No targets should be inferred.
+
+## Risk Register
+
+| Risk | Likelihood | Impact | Severity | Mitigation / owner action |
+|---|---|---|---|---|
+| Current Confluence source differs from the user-reported deletion reflected in requirements.md. | Possible; current page was not checked | High: acceptance scope may be incomplete or misclassified | **High** | Before planning, either verify the current source through an authorized means or obtain explicit human acceptance that the revised requirements artifact is the governing baseline despite the caveat. Preserve the caveat in downstream artifacts. |
+| Architecture approval status remains stale/ambiguous. | Certain in the inspected document | Medium: stage gate can be misapplied | **Medium** | Reconcile the current proposal's status and approval record before Stage 4, or have the human explicitly accept the conversation approval as authoritative despite the stale text. Do not rely on the 2026-10-14 archive. |
+| Legacy TS-LOG-004 label is mistaken for current source coverage. | Likely if reports are read without context | Medium: false source-compliance claim | **Medium** | In an authorized planning/implementation change, relabel blank-field checks as project regressions and update affected traceability/report summaries. Keep the explicit non-source classification. |
+| Broad unknown-user error tokens accept a non-specific message. | Possible | Medium: false positive for AC 4.1 | **Medium** | Confirm message semantics against the accepted source wording; narrow tokens or assert a more specific observable account-does-not-exist outcome before claiming source acceptance. |
+| Browser/profile is not fully cleaned after a partial startup/configuration failure. | Possible | Medium: leaked process or residual session profile | **Medium** | Ensure a partially created driver is quit if configuration fails; report profile deletion failure without masking the test outcome. Add targeted lifecycle coverage during implementation/verification. |
+| Screenshot contains account data outside redacted inputs. | Low when opt-in remains off; higher if enabled | High: exposure in local artifact or later sharing | **Medium** | Keep capture disabled by default; before enabling, review page data and define restricted storage, access and retention. Do not upload/share without explicit artifact controls. |
+| Ten-second waits are too short for a slow or variable network. | Possible; behavior not measured | Medium: intermittent failures or timeouts | **Low-Medium** | Keep bounded waits; if observed in authorized verification, adjust a documented non-secret timeout or locator condition based on evidence. Do not add unbounded retries or claim performance. |
+
+## Gaps and Evidence Limits
+
+1. **Source version:** The requirements artifact says the 2026-11-03 removal was user-reported. Exact current Confluence version/date and other possible page changes were not verified.
+2. **Runtime evidence:** This review did not execute Maven, launch browsers, access the target site, or test network behavior. All live login, negative-login, recovery, Remember Me, Chrome/Firefox and headless behavior remains unverified by this review.
+3. **Credential-dependent scenarios:** Static guards and environment-only sourcing are present. Actual credential availability, authorization and welcome identity were not checked.
+4. **CI and dependency assurance:** No configured workflow exists. CI integration, dependency vulnerability status, browser provisioning and artifact retention were not tested or assessed.
+5. **Current source-change boundary:** The reported removal is not fulfillment of the former inline-validation criterion. Native validation remains supplemental only. This review does not authorize or propose changing the external site.
+
+## Prioritized Recommendations
+
+### Must fix before planning, unless explicitly accepted by the human
+
+1. **M1 — Establish the governing requirements baseline.** Verify the current Confluence revision or record the human's explicit acceptance that the user-reported requirements artifact governs planning despite the unverified version/date. Carry that caveat forward; do not claim independent source verification.
+2. **M2 — Reconcile architecture approval metadata.** Correct the current proposal's “awaiting approval” status and record the 2026-11-03 approval, or obtain explicit human acceptance that the orchestrator's approval record controls despite the document mismatch. The historical 2026-10-14 approval is not approval of this fresh proposal.
+
+### Should fix before merge or verification
+
+3. **S1 — Remove ambiguity from legacy scenario labels.** Plan to rename the native blank-field checks and update result/traceability wording so TS-LOG-004 cannot be mistaken for an active source scenario. Preserve them only as project regressions unless separately re-scoped.
+4. **S2 — Tighten AC 4.1 assertion semantics.** Confirm the accepted message wording and ensure generic errors cannot satisfy the unknown-account test.
+5. **S3 — Harden failure cleanup.** Quit a driver created before setup/configuration fails; make temporary-profile cleanup failure visible without replacing the original test result. Add focused lifecycle evidence when implemented.
+6. **S4 — Keep source outcomes and test labels distinct.** Remember Me restart and blank-field checks are project-only. Retain recovery navigation and control checks as traceable evidence for AC 1.4 and AC 1.1–1.3 respectively, even if their dedicated test names identify them as supplementary. Do not infer Remember Me persistence duration or password-reset completion from these checks.
+
+### Nice to have
+
+7. **N1 — Protect diagnostic data operationally.** Keep screenshots off by default; document review, access and retention before any opt-in capture or artifact sharing.
+8. **N2 — Revisit timeout only from observed evidence.** If authorized browser verification demonstrates slow-network timeouts, tune a bounded configurable wait and record why. No performance target or extra retry system is justified now.
+
+## Approval Conditions and Handoff
+
+**Verdict: APPROVED WITH CONDITIONS.**
+
+- **Planning gate:** Stage 4 may proceed only after M1 and M2 are resolved, or the human explicitly accepts each limitation. Acceptance does not turn the Confluence update into independently verified evidence.
+- **Implementation/verification gate:** Carry S1–S4 into the plan. A live source-compliance claim must use the accepted requirements baseline and fresh, requirement-aligned runtime evidence. A project-only browser-validation test must never be reported as satisfying former AC 5.1.
+- **No execution claim:** This review ran no tests, browser, site, network, dependency scan, CI job or performance check. Existing/historical reports are not evidence of execution in this review.
+- **No scope change:** This deliverable does not authorize site changes, credential use, test execution, CI creation, parallelization or additional browsers.
+
+Planning may proceed only after the conditions above are resolved or explicitly accepted by the human. Return this verdict, findings and approval gate to the orchestrator; stop at Stage 3.
+
+## Traceability
+
+| Source | Reviewed evidence |
+|---|---|
+| `docs/sdlc/requirements.md` | Functional requirements FR-1, FR-3–FR-6; NFR-1; US-AUTH-002; current three-scenario inventory; constraints/dependencies; open questions and source-change record. The source caveat is user-reported and unverified. |
+| `docs/sdlc/architecture.md` | Fresh proposal context/source caveat, active mapping, component boundaries, configuration/execution, error/security/cleanup, current traceability/gaps, downstream reconciliation. Historical proposal/archive text was not treated as current acceptance evidence. |
+| `src/test/java/Github_Copilot/tests/LoginPageTests.java` | TS-LOG-001..003, legacy blank-field TS-LOG-004/007/008, supplementary Remember Me TS-LOG-005, recovery TS-LOG-006, AC-UI-001. |
+| `src/test/java/Github_Copilot/pages/LoginPage.java`, `BasePage.java`, `LoginPageUrlTests.java` | Locators, click/wait behavior, feedback and native validation, dashboard destination predicate, top-of-form position check, recovery URL, URL predicate unit tests. |
+| `src/test/java/Github_Copilot/base/BaseTest.java` | Local Chrome/Firefox/headless setup, per-test driver lifecycle, temporary Remember Me profile and best-effort cleanup. |
+| `src/test/java/Github_Copilot/config/TestConfig.java`, `tests/CredentialTestGuard.java`, `tests/LoginScenarioAssertions.java`, `data/TestData.java` | Setting precedence/transport policy, environment-only credentials and identity, skip/fail guard, message tokens and behavioral assertions. |
+| `src/test/java/Github_Copilot/listeners/*`, `utils/LogUtil.java`, `utils/ScreenshotUtil.java` | Outcome/report handling, redaction behavior and screenshot/artifact limitations. |
+| `pom.xml`, `README.md`, `.github/` | Test-scoped dependencies, Surefire include, documented runtime configuration, and absence of configured CI workflow. |
+
+---
+
+## Historical / Superseded Reviews — Exact Prior Committed Record
+
+The prior committed review is preserved verbatim below for audit history. Its dated findings, approval gates, and execution evidence are historical and superseded by the current 2026-11-03 review and disposition above; they do not establish current approval or runtime results.
+
 # Stage 3 Design Review — Fresh Architecture Review (2026-10-14)
 
 ## Review Metadata

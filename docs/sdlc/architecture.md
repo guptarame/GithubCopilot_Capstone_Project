@@ -1,4 +1,122 @@
-# Stage 2 Architecture Proposal (Fresh Revision 2026-10-14)
+# Stage 2 Architecture Proposal — Fresh Source Reconciliation (2026-11-03)
+
+**Current status: User-approved on 2026-11-03 at 00:33 (+05:30); Stage 3 design review — APPROVED WITH CONDITIONS, with planning conditions resolved/accepted. Stages 4, 5, and 6 are complete as scoped deliverables. The user accepted Stage 6 PASS WITH LIMITATIONS at 00:57 (+05:30), permitting Stage 7 progression; no Stage 4 or renewed architecture-approval gate remains for this factual correction.**
+
+## Context, Goals, Scope, and Evidence
+
+This proposal reconciles the existing Java 21 / Maven / Selenium 4 / JUnit 5 test framework with the current `docs/sdlc/requirements.md` artifact. It covers browser automation for the external My Account login page at `https://askomdch.com/account/`; the site and authentication service are outside project scope. The original Stage 2 task proposed no implementation, test, requirements, CI, or external-site changes. Subsequent implementation and verification are recorded in the current handoff below; this correction changes status documentation only.
+
+**Source caveat:** requirements.md records a 2026-10-14 page read and a user-reported 2026-11-03 removal of AC 5.1 and TS-LOG-004. The updated Confluence page/version/date could not be independently verified in this session; the configured MCP API did not provide source content. Accordingly, the current mapping below follows the revised requirements artifact and user report, not a verified Confluence fetch. The historical wording is retained in requirements.md only. Its removal does not mean the former criterion was met.
+
+**Active mapping in the current artifact:** AC 1.1–1.4 (login controls and password-reset navigation), AC 2.1–2.2 (successful login/dashboard/welcome), AC 3.1 (incorrect password), and AC 4.1 (unregistered account); source scenarios TS-LOG-001, TS-LOG-002, and TS-LOG-003. NFR-1 has no measurable performance or security thresholds. This inventory is not a claim that the source was re-fetched or any scenario passed.
+
+Goals are to preserve established package boundaries, keep source acceptance distinct from project-only regression coverage, provide isolated sequential local tests, and make configuration, errors, cleanup, and diagnostic risks explicit. Browser-native blank-field validation remains supplementary project regression only; it is not an active source criterion and cannot establish compliance with former AC 5.1.
+
+## Architecture Overview
+
+Maven Surefire discovers JUnit tests. `BaseTest` owns per-test WebDriver setup/teardown; `TestConfig` resolves non-secret settings, environment-only credentials, and URL transport policy; page objects own selectors and browser actions; scenario tests and helpers assert observable outcomes. JUnit extensions classify outcomes and write Extent reports. Failure screenshots are opt-in and disabled by default. Browser cases depend on network/site availability, a local supported browser/driver, and authorized environment-only account data where needed.
+
+```text
+Maven Surefire -> JUnit extensions + scenario tests -> BaseTest/WebDriver
+                                               |              |
+                                       LoginPage -> BasePage -> external login page
+                                               |
+                              TestConfig + TestData; outcomes/reports
+```
+
+## Components and Boundaries
+
+| Component / key classes | Responsibility | Inputs → outputs | Dependencies |
+| --- | --- | --- | --- |
+| `config/TestConfig.java` | Resolve and validate settings; credentials and expected identity are environment-only. | Non-secret property/env/default and credential presence → settings, transport validation, or guard inputs. | Java URI APIs, `TestData`. |
+| `data/TestData.java` | Hold bounded timeout defaults and feedback tokens. | Framework constants → waits and assertion inputs. | Java collections. |
+| `base/BaseTest.java` | Create/quit per-test local Chrome or Firefox drivers, configure timeouts/viewport, register driver; support a temporary profile for the supplemental restart regression. | `TestConfig`, JUnit metadata → driver; teardown → released driver/profile. | Selenium, WebDriverManager, listener. |
+| `pages/BasePage.java`, `pages/LoginPage.java` | Shared bounded browser actions/waits; login selectors, interactions, and observable form/auth/recovery state. | Driver, URL, locator, test input → action/state. | Selenium WebDriver and explicit waits. |
+| `tests/LoginPageTests.java` | Keep each source scenario isolated; retain project-only UI, recovery, Remember Me, and browser-validation regressions without treating them as source criteria. | Safe test data/config and page observations → JUnit result. | JUnit, `CredentialTestGuard`, `LoginScenarioAssertions`, `TestData`. |
+| `tests/CredentialTestGuard.java`, `LoginScenarioAssertions.java` | Distinguish missing-prerequisite fail/skip and centralize behavioral assertions without exposing credentials/identity. | Credential presence and page state → guard decision/assertion result. | `TestConfig`, `TestData`, JUnit. |
+| `listeners/TestLifecycleListener.java`, `TestOutcome.java`, `ExtentReportExtension.java`, `utils/LogUtil.java` | Record separate pass/fail/skip results and durations; write local logs/report. | JUnit callbacks, safe metadata → logs and Extent HTML. | JUnit, ExtentReports. |
+| `utils/ScreenshotUtil.java` | Optional failure-only screenshot capture with selected form-field redaction. | Driver/test name → optional `target/screenshots/` artifact. Redaction is not page sanitization. | Selenium screenshot/JS APIs, filesystem. |
+| Maven Surefire | Select test classes using configured `**/*Tests.java` include and write Surefire results. | Maven/JUnit classes → local reports. | Java 21, Maven, `pom.xml`. |
+
+Keep selectors/actions in `LoginPage`, shared waits/actions in `BasePage`, driver lifecycle in `BaseTest`, runtime settings in `TestConfig`, and scenario assertions in tests/helpers. The external application is an integration boundary. No `src/test/resources` data or additional dependency is needed for current scope.
+
+## Directory Layout and Integrations
+
+```text
+src/test/java/Github_Copilot/
+  base/  config/  data/  pages/  tests/  listeners/  utils/
+docs/sdlc/  requirements.md, architecture.md, and later-stage artifacts
+target/     generated local Surefire, Extent, and optional screenshot output
+```
+
+`pom.xml` uses test-scoped Selenium 4.25.0, WebDriverManager 6.1.0, JUnit Jupiter 5.11.3 / Platform 1.11.3, ExtentReports 5.1.2, and Surefire 3.5.0. Surefire's `**/*Tests.java` include selects `LoginPageTests` and browser-independent `*Tests` classes; `LoginPageRunner` does not match that default include. No `.github/workflows/` directory, CI secret mapping, CI execution, or artifact upload is configured.
+
+## Configuration and End-to-End Execution
+
+Non-secret settings use **nonblank Java system property → environment variable → documented default**. This includes URL, browser, headless mode, page-load timeout, required-credential mode, local HTTP opt-in, screenshot opt-in, and non-secret invalid-test data. HTTPS is required; HTTP is allowed only for an explicitly opted-in local host. The current page-load timeout and explicit waits are bounded (10-second defaults); implicit wait is zero.
+
+`LOGIN_VALID_USERNAME`, `LOGIN_VALID_PASSWORD`, and `LOGIN_EXPECTED_WELCOME` are read only from environment variables, never from properties or defaults. Do not put credential or identity values in source, command literals, logs, reports, screenshots, examples, or committed artifacts. Missing prerequisites produce explicit skips in optional mode or failures in required mode; a skip is not a pass.
+
+1. Maven compiles and Surefire selects `**/*Tests.java`; `mvn test` includes browser scenarios and browser-independent unit tests.
+2. JUnit lifecycle/report extensions begin tracking. For browser tests, `BaseTest` creates a fresh local driver through WebDriverManager, applies page-load/viewport options and zero implicit wait, then registers the driver.
+3. Each test opens the configured URL through `LoginPage`, performs page-object actions with bounded `BasePage` explicit waits, and checks its own outcome. Credential guards run before cases that need valid credentials or a known account.
+4. JUnit outcomes remain distinct: pass, assertion/driver failure, and assumption-aborted skip. `@AfterEach` quits the driver, clears registration, and best-effort removes the temporary profile where used. Cleanup/report diagnostic failures must not convert or conceal the primary test outcome.
+5. Surefire writes to `target/surefire-reports/`; Extent writes to `target/extent-reports/ExtentReport.html` by default. Failure screenshots are opt-in and off by default. Artifacts are local; CI upload/retention is not configured.
+
+## Technology Decisions, Risks, and Operational Limits
+
+- Preserve Java 21, Maven, Selenium 4, WebDriverManager, JUnit 5, and ExtentReports; no added library, remote grid, parallel execution, or extra browser is justified.
+- Keep execution isolated and sequential. Chrome and Firefox driver paths exist, but configuration/source inspection is not run evidence. Shared report/listener state and output paths are not claimed parallel-safe.
+- Retain existing supplementary regressions: blank-both/blank-single-field browser validation, Remember Me restart, recovery flow, and control visibility. At proposal/review time these used legacy TS-LOG-004/007/008, TS-LOG-005/006, and AC-UI-001 labels. Completed R4-01 now identifies them as `REG-NATIVE-BOTH/USERNAME/PASSWORD`, `REG-REMEMBER-RESTART`, `REG-RECOVERY`, and `REG-CONTROLS`; only TS-LOG-001..003 remain source scenarios. Relabeling does not change the supplementary coverage boundary or fulfill former AC 5.1.
+- Under the revised requirements artifact, source scenarios are TS-LOG-001..003. Current plan and verification mappings have been reconciled; older four-scenario/AC 5.1 mappings and review-time gate statements remain dated history, not current acceptance evidence. The reported deletion does not establish that the former inline-error criterion passed.
+- No invented NFR targets: do not imply measurable performance, security, reliability, or cross-browser guarantees from framework safeguards or configuration.
+
+## Error Handling, Security, and Cleanup
+
+- Unsupported browsers, invalid URLs, driver startup errors, missing required credentials, failed assertions, and bounded-wait timeouts must remain visible failures/errors. Optional missing prerequisites are explicit skips.
+- Teardown attempts `driver.quit()` and clears listener registration; temporary profile deletion and diagnostic capture are best effort. Preserve the original test outcome if cleanup or report diagnostics fail.
+- Credentials and identity stay environment-only. Do not expose them in logs, reports, screenshots, or command/property literals. Screenshots are off by default; selected input redaction does not establish that the rest of an authenticated page is safe. Review page content and artifact handling before opting in.
+- Keep HTTPS mandatory except explicit local HTTP opt-in. No CI, retention policy, or secret injection is configured.
+
+## Current Requirements Traceability
+
+| Active requirement / scenario in revised requirements artifact | Architecture and current code coverage | Acceptance boundary |
+| --- | --- | --- |
+| AC 1.1–1.4 / FR-1, FR-5, FR-6: controls, visible/clickable Log in, recovery navigation | `LoginPage` owns controls and selectors; UI regression checks control visibility; source scenarios exercise submit; supplemental `REG-RECOVERY` (formerly TS-LOG-006) clicks recovery and checks destination/form. | Traceability is distributed across cases; recovery navigation is required but no dedicated source scenario is listed. No evidence of browser execution is asserted here. |
+| AC 2.1–2.2 / FR-3 / TS-LOG-001 | Valid-login test uses credential guard, asserts authentication, configured account-home URL/content, logout, and welcome identity via helper. | Architecture maps all source outcomes; live acceptance still requires fresh evidence with authorized runtime configuration. |
+| AC 3.1 / FR-4 / TS-LOG-002 | Known-username guard and invalid-password assertion check feedback, unauthenticated state, retained form, and top-of-form notice. | Keep username secret; code coverage is not evidence of live behavior. |
+| AC 4.1 / FR-4 / TS-LOG-003 | Unknown-user scenario checks error tokens, unauthenticated state, and retained login form. | Confirm acceptance against source wording and obtain fresh run evidence; no pass is claimed. |
+| NFR-1 / US-AUTH-002 | User story is represented by the three current scenarios; transport/secret safeguards remain framework controls. | No measurable performance/security threshold is specified. Do not infer such guarantees. |
+
+## Downstream Reconciliation and Success Criteria
+
+The original prospective Stage 2 handoff is superseded by the completed-stage record below. Review-time observations in `design-review.md`, the Stage 1-only handoff in `requirements.md`, and archived approval/gate statements describe their respective points in time; they do not reopen completed stages.
+
+| Decision / stage | Current disposition |
+| --- | --- |
+| Architecture approval / F2–M2 | Explicit user approval at **2026-11-03 00:33 (+05:30)** governs this fresh architecture. Corrected current metadata resolves the stale approval wording; the design review's original observations are preserved. |
+| Source baseline / F1–M1 | At **00:39 (+05:30)** the user accepted the reported removal of AC 5.1 and TS-LOG-004 as the governing baseline despite the independently unverified Confluence page/version/date. This accepts the limitation, not source verification or fulfillment of the removed criterion. |
+| Stage 4 / Stage 5 | `impl-plan.md` records completed R4-01..R4-04: regression relabeling, tighter unknown-account semantics, lifecycle cleanup hardening, and integration/handoff. S1–S4 were carried into that work; live behavior is not established by implementation completion. |
+| Stage 6 / R4-05 | `verification-report.md` records successful compilation and **28 focused tests passed, 0 failures, 0 errors, 0 skips**. **0/9 Chrome browser scenarios executed**; all nine remain UNRUN because required credential/identity environment variables were absent and ChromeDriver/site readiness was not established. Reporting is complete, not live-browser acceptance. |
+| Acceptance / publication | At **00:57 (+05:30)** the user accepted **PASS WITH LIMITATIONS** and authorized Stage 7 commit/push and a follow-up PR against `master`, with **no merge authorization**. Requester-provided publication context identifies **PR #7 OPEN**, head `428de07e554d091746f8d27412080ed465776e41`, original nine-file diff; no GitHub check was performed for this correction. |
+
+**Current gate / handoff:** Stage 7 progression is permitted under the accepted limitations and existing publication authorization; Stage 4 is not pending. This documentation-only factual correction requires no new architecture proposal or approval gate. Any Stage 8 review publication remains subject to its explicit human-approval gate; merge is not authorized. This correction performs no Git index, commit, push, or GitHub operation and runs no tests or browsers. Acceptance does not convert unrun scenarios into passes, independently verify Confluence, or establish source compliance.
+
+Implementation success criteria retained from the approved architecture (completion/evidence is bounded by the records above):
+
+- Preserve the current three source scenarios and map each active AC to observable assertions; distinguish supplementary regressions in test names/reports.
+- Keep responsibilities/data flow above, bounded waits, isolated sequential browser execution, and safe configuration precedence.
+- Keep valid credentials/expected identity environment-only, HTTPS/local-HTTP policy enforced, skips distinct from passes, and teardown/error handling reliable.
+- Report source acceptance only from fresh requirement-aligned verification; never infer that removed AC 5.1 or TS-LOG-004 was met.
+- Do not claim CI, cross-browser, live-site, performance, or reliability evidence without actual configured/executed evidence.
+
+### Historical Architecture Record
+
+The prior 2026-10-14 proposal and its traceability are retained below as historical text, not current requirements, current gate authority, or current acceptance evidence. It described TS-LOG-001..004 and AC 5.1 before the reported source change. Its conflicting review-time approval/rejection statements are preserved without retroactive correction. The fresh revision's authority is the explicit 2026-11-03 approval and subsequent decisions recorded above, not any historical status below.
+
+---
+
+# Archived Stage 2 Architecture Proposal (2026-10-14; superseded)
 
 **Status:** Approved by the user on 2026-10-14 with the explicit response “yes”; Stage 3 design review is authorized. The earlier proposal remains historical only.
 

@@ -30,24 +30,36 @@ public abstract class BaseTest {
     @BeforeEach
     void setupDriver(TestInfo testInfo) throws IOException {
         boolean rememberMeTest = testInfo.getDisplayName().toLowerCase().contains("remember me");
-        if (rememberMeTest) {
-            persistentProfileDir = Files.createTempDirectory("remember-me-profile-");
-            driver = createDriver(TestConfig.browser(), TestConfig.headless(), persistentProfileDir);
-        } else {
-            driver = createDriver(TestConfig.browser(), TestConfig.headless());
+        try {
+            if (rememberMeTest) {
+                persistentProfileDir = createPersistentProfileDirectory();
+            }
+            driver = persistentProfileDir == null
+                    ? createDriver(TestConfig.browser(), TestConfig.headless())
+                    : createDriver(TestConfig.browser(), TestConfig.headless(), persistentProfileDir);
+            TestLifecycleListener.registerDriver(driver);
+        } catch (IOException | RuntimeException | Error failure) {
+            WebDriver partiallyStartedDriver = driver;
+            driver = null;
+            quitDriverSafely(partiallyStartedDriver, "WebDriver cleanup failed after test setup failure.");
+            clearDriverRegistrationSafely();
+            deletePersistentProfile();
+            throw failure;
         }
-        TestLifecycleListener.registerDriver(driver);
     }
 
     @AfterEach
     void teardownDriver() {
+        WebDriver activeDriver = driver;
+        driver = null;
         try {
-            if (driver != null) {
-                driver.quit();
-            }
+            quitDriverSafely(activeDriver, "WebDriver quit failed during test cleanup.");
         } finally {
-            TestLifecycleListener.clearDriver();
-            deletePersistentProfile();
+            try {
+                clearDriverRegistrationSafely();
+            } finally {
+                deletePersistentProfile();
+            }
         }
     }
 
@@ -60,32 +72,56 @@ public abstract class BaseTest {
     }
 
     protected WebDriver restartDriver(Path profileDir) {
-        if (driver != null) {
-            driver.quit();
-            TestLifecycleListener.clearDriver();
+        WebDriver previousDriver = driver;
+        driver = null;
+        clearDriverRegistrationSafely();
+        quitDriverSafely(previousDriver, "WebDriver quit failed during Remember Me restart.");
+
+        try {
+            WebDriver restartedDriver = createDriver(TestConfig.browser(), TestConfig.headless(), profileDir);
+            driver = restartedDriver;
+            TestLifecycleListener.registerDriver(restartedDriver);
+            return restartedDriver;
+        } catch (RuntimeException | Error failure) {
+            WebDriver partiallyStartedDriver = driver;
+            driver = null;
+            quitDriverSafely(partiallyStartedDriver, "WebDriver cleanup failed after restart failure.");
+            clearDriverRegistrationSafely();
+            deletePersistentProfile();
+            throw failure;
         }
-        driver = createDriver(TestConfig.browser(), TestConfig.headless(), profileDir);
-        TestLifecycleListener.registerDriver(driver);
-        return driver;
     }
 
     private void deletePersistentProfile() {
-        if (persistentProfileDir == null) {
+        Path profileDir = persistentProfileDir;
+        persistentProfileDir = null;
+        if (profileDir == null) {
             return;
         }
-        try (var paths = Files.walk(persistentProfileDir)) {
-            paths.sorted(Comparator.reverseOrder()).forEach(path -> {
+
+        boolean deletionFailed = false;
+        try (var paths = Files.walk(profileDir)) {
+            for (Path path : paths.sorted(Comparator.reverseOrder()).toList()) {
                 try {
-                    Files.deleteIfExists(path);
-                } catch (IOException ignored) {
-                    // Best-effort cleanup; the test result must remain authoritative.
+                    deleteProfileEntry(path);
+                } catch (Throwable failure) {
+                    deletionFailed = true;
                 }
-            });
-        } catch (IOException ignored) {
-            // Best-effort cleanup for browser-created profile files.
-        } finally {
-            persistentProfileDir = null;
+            }
+        } catch (Throwable failure) {
+            deletionFailed = true;
         }
+        if (deletionFailed) {
+            warnSafely("Temporary browser profile cleanup failed; local residual files may require authorized removal.");
+        }
+    }
+
+    protected Path createPersistentProfileDirectory() throws IOException {
+        return Files.createTempDirectory("remember-me-profile-");
+    }
+
+    protected void deleteProfileEntry(Path path) throws IOException {
+        Files.deleteIfExists(path);
     }
 
     protected WebDriver createDriver(String browser, boolean headless) {
@@ -96,7 +132,7 @@ public abstract class BaseTest {
         WebDriver webDriver;
         return switch (browser) {
             case "firefox" -> {
-                WebDriverManager.firefoxdriver().setup();
+                setupDriverManager(browser);
                 FirefoxOptions options = new FirefoxOptions();
                 if (headless) {
                     options.addArguments("-headless");
@@ -104,12 +140,12 @@ public abstract class BaseTest {
                 if (userDataDir != null) {
                     options.addArguments("-profile", userDataDir.toAbsolutePath().toString());
                 }
-                webDriver = new FirefoxDriver(options);
-                configureDriver(webDriver, headless);
+                webDriver = newFirefoxDriver(options);
+                configureAndReturn(webDriver, headless);
                 yield webDriver;
             }
             case "chrome" -> {
-                WebDriverManager.chromedriver().setup();
+                setupDriverManager(browser);
                 ChromeOptions options = new ChromeOptions();
                 if (headless) {
                     options.addArguments("--headless=new");
@@ -118,12 +154,38 @@ public abstract class BaseTest {
                     options.addArguments("--user-data-dir=" + userDataDir.toAbsolutePath());
                 }
                 options.addArguments("--disable-gpu", "--no-sandbox", "--window-size=1920,1080");
-                webDriver = new ChromeDriver(options);
-                configureDriver(webDriver, headless);
+                webDriver = newChromeDriver(options);
+                configureAndReturn(webDriver, headless);
                 yield webDriver;
             }
             default -> throw new IllegalArgumentException("Unsupported browser: " + browser);
         };
+    }
+
+    protected void setupDriverManager(String browser) {
+        switch (browser) {
+            case "firefox" -> WebDriverManager.firefoxdriver().setup();
+            case "chrome" -> WebDriverManager.chromedriver().setup();
+            default -> throw new IllegalArgumentException("Unsupported browser: " + browser);
+        }
+    }
+
+    protected WebDriver newFirefoxDriver(FirefoxOptions options) {
+        return new FirefoxDriver(options);
+    }
+
+    protected WebDriver newChromeDriver(ChromeOptions options) {
+        return new ChromeDriver(options);
+    }
+
+    private WebDriver configureAndReturn(WebDriver webDriver, boolean headless) {
+        try {
+            configureDriver(webDriver, headless);
+            return webDriver;
+        } catch (RuntimeException | Error failure) {
+            quitDriverSafely(webDriver, "WebDriver cleanup failed after startup configuration failure.");
+            throw failure;
+        }
     }
 
     private void configureDriver(WebDriver webDriver, boolean headless) {
@@ -133,6 +195,33 @@ public abstract class BaseTest {
             webDriver.manage().window().maximize();
         } else {
             webDriver.manage().window().setSize(new Dimension(1920, 1080));
+        }
+    }
+
+    private static void quitDriverSafely(WebDriver webDriver, String warning) {
+        if (webDriver == null) {
+            return;
+        }
+        try {
+            webDriver.quit();
+        } catch (Throwable cleanupFailure) {
+            warnSafely(warning);
+        }
+    }
+
+    private static void clearDriverRegistrationSafely() {
+        try {
+            TestLifecycleListener.clearDriver();
+        } catch (Throwable cleanupFailure) {
+            warnSafely("WebDriver lifecycle registration cleanup failed.");
+        }
+    }
+
+    private static void warnSafely(String warning) {
+        try {
+            Github_Copilot.utils.LogUtil.warn(warning);
+        } catch (Throwable ignored) {
+            // Diagnostics must not replace the original test/setup outcome.
         }
     }
 

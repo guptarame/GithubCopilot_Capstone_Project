@@ -24,6 +24,14 @@ class LoginPageUrlTests {
     }
 
     @Test
+    void rejectsDashboardHomeFragmentMismatch() {
+        assertFalse(LoginPage.isDashboardHomeUrl(
+                "https://askomdch.com/account/#orders", "https://askomdch.com/account/"));
+        assertFalse(LoginPage.isDashboardHomeUrl(
+                "https://askomdch.com/account/#orders", "https://askomdch.com/account/#profile"));
+    }
+
+    @Test
     void rejectsDifferentOriginsAndMalformedUrls() {
         assertFalse(LoginPage.isDashboardHomeUrl(
                 "https://other.example/account/", "https://askomdch.com/account/"));

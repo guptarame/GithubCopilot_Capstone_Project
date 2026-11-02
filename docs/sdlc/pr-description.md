@@ -40,4 +40,8 @@ The current Stage 6 report records **PASS WITH LIMITATIONS** for this follow-up.
 
 ## PR Reference
 
-The live GitHub PR URL, number, base/head, and state will be recorded here after creation; the live PR remains authoritative for mutable review state.
+- **PR #6:** [https://github.com/guptarame/GithubCopilot_Capstone_Project/pull/6](https://github.com/guptarame/GithubCopilot_Capstone_Project/pull/6)
+- **State:** OPEN (verified after creation; consult the live PR for current state).
+- **Base:** `master`
+- **Head:** `feature/selenium-login-automation`
+The PR was created from commit `c9c6f6d394fa0bc8ca761366c2fa0c74d73e05fb`. The live PR remains authoritative for mutable review state.

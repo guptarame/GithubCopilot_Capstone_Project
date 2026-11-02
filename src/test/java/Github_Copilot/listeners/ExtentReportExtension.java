@@ -6,17 +6,17 @@ import Github_Copilot.utils.ScreenshotUtil;
 import com.aventstack.extentreports.ExtentReports;
 import com.aventstack.extentreports.ExtentTest;
 import com.aventstack.extentreports.reporter.ExtentSparkReporter;
-import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
+import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.opentest4j.TestAbortedException;
-
+import org.junit.jupiter.api.extension.TestWatcher;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 
-public class ExtentReportExtension implements BeforeEachCallback, AfterTestExecutionCallback, AfterAllCallback {
+public class ExtentReportExtension implements BeforeEachCallback, AfterTestExecutionCallback,
+    AfterAllCallback, TestWatcher {
 
     private static final String REPORT_PATH_PROPERTY = "extentReportPath";
     private static final String DEFAULT_REPORT_PATH = "target/extent-reports/ExtentReport.html";
@@ -37,14 +37,38 @@ public class ExtentReportExtension implements BeforeEachCallback, AfterTestExecu
             return;
         }
 
-        Optional<Throwable> failure = context.getExecutionException();
-        if (failure.isEmpty()) {
-            test.pass("Test passed");
-        } else if (failure.get() instanceof TestAbortedException) {
-            test.skip("Test skipped");
-        } else {
-            test.fail("Test failed; see the Surefire report for diagnostic details.");
+        if (TestOutcome.from(context.getExecutionException()) == TestOutcome.FAILED) {
             attachFailureScreenshot(test, context.getDisplayName());
+        }
+    }
+
+    @Override
+    public void testSuccessful(ExtensionContext context) {
+        finishTest("Test passed");
+    }
+
+    @Override
+    public void testFailed(ExtensionContext context, Throwable cause) {
+        finishTest("Test failed; see the Surefire report for diagnostic details.");
+    }
+
+    @Override
+    public void testAborted(ExtensionContext context, Throwable cause) {
+        ExtentTest test = CURRENT_TEST.get();
+        if (test != null) {
+            test.skip("Test skipped");
+        }
+        CURRENT_TEST.remove();
+    }
+
+    private void finishTest(String result) {
+        ExtentTest test = CURRENT_TEST.get();
+        if (test != null) {
+            if (result.equals("Test passed")) {
+                test.pass(result);
+            } else {
+                test.fail(result);
+            }
         }
         CURRENT_TEST.remove();
     }
@@ -61,8 +85,8 @@ public class ExtentReportExtension implements BeforeEachCallback, AfterTestExecu
             ExtentSparkReporter sparkReporter = new ExtentSparkReporter(reportPath.toFile());
             ExtentReports extentReports = new ExtentReports();
             extentReports.attachReporter(sparkReporter);
-            extentReports.setSystemInfo("Browser", System.getProperty("browser", "chrome"));
-            extentReports.setSystemInfo("Headless", System.getProperty("headless", "false"));
+            extentReports.setSystemInfo("Browser", TestConfig.browser());
+            extentReports.setSystemInfo("Headless", Boolean.toString(TestConfig.headless()));
             return extentReports;
         } catch (Exception exception) {
             throw new ExceptionInInitializerError("Unable to initialize the Extent report.");
@@ -74,18 +98,18 @@ public class ExtentReportExtension implements BeforeEachCallback, AfterTestExecu
             return;
         }
 
-        Path screenshot = ScreenshotUtil.capture(TestLifecycleListener.currentDriver(), testName);
-        if (screenshot == null) {
-            return;
-        }
-
         try {
+            Path screenshot = ScreenshotUtil.capture(TestLifecycleListener.currentDriver(), testName);
+            if (screenshot == null) {
+                return;
+            }
+
             Path reportPath = Path.of(System.getProperty(REPORT_PATH_PROPERTY, DEFAULT_REPORT_PATH))
                     .toAbsolutePath();
             Path relativeScreenshot = reportPath.getParent().relativize(screenshot.toAbsolutePath());
             test.addScreenCaptureFromPath(relativeScreenshot.toString().replace("\\", "/"));
-        } catch (IllegalArgumentException exception) {
-            LogUtil.warn("Failure screenshot could not be attached to the Extent report.");
+        } catch (RuntimeException exception) {
+            LogUtil.warn("Failure screenshot diagnostics could not be attached to the Extent report.");
         }
     }
 }

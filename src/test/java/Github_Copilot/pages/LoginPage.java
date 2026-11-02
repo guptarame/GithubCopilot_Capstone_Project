@@ -6,6 +6,7 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 
 import java.net.URI;
+import java.util.Objects;
 
 public class LoginPage extends BasePage {
 
@@ -14,7 +15,10 @@ public class LoginPage extends BasePage {
     private final By rememberMeCheckbox = By.id("rememberme");
     private final By loginButton = By.name("login");
     private final By lostPasswordLink = By.linkText("Lost your password?");
+    private final By passwordRecoveryForm = By.cssSelector("form.woocommerce-ResetPassword");
     private final By dashboardContent = By.cssSelector("div.woocommerce-MyAccount-content");
+    private final By accountNavigation = By.cssSelector("nav.woocommerce-MyAccount-navigation");
+    private final By loginForm = By.cssSelector("form.woocommerce-form-login");
     private final By errorBanner = By.cssSelector("ul.woocommerce-error, div.woocommerce-notices-wrapper .woocommerce-error");
     private final By logoutLink = By.linkText("Log out");
 
@@ -59,6 +63,76 @@ public class LoginPage extends BasePage {
 
     public boolean isUnauthenticated() {
         return !isLoggedIn();
+    }
+
+    public boolean isLogoutVisible() {
+        return isVisible(logoutLink);
+    }
+
+    public boolean isMyAccountDashboardVisible(String accountHomeUrl) {
+        return isDashboardHomeUrl(currentUrl(), accountHomeUrl)
+                && isVisible(accountNavigation) && isVisible(dashboardContent);
+    }
+
+    static boolean isDashboardHomeUrl(String currentUrl, String accountHomeUrl) {
+        if (currentUrl == null || accountHomeUrl == null) {
+            return false;
+        }
+
+        try {
+            URI current = URI.create(currentUrl).normalize();
+            URI expected = URI.create(accountHomeUrl).normalize();
+            return current.getUserInfo() == null && expected.getUserInfo() == null
+                    && current.getScheme() != null && expected.getScheme() != null
+                    && current.getScheme().equalsIgnoreCase(expected.getScheme())
+                    && current.getHost() != null && expected.getHost() != null
+                    && current.getHost().equalsIgnoreCase(expected.getHost())
+                    && effectivePort(current) == effectivePort(expected)
+                    && normalizedPath(current).equals(normalizedPath(expected))
+                    && Objects.equals(current.getRawQuery(), expected.getRawQuery())
+                    && Objects.equals(current.getRawFragment(), expected.getRawFragment());
+        } catch (IllegalArgumentException ignored) {
+            return false;
+        }
+    }
+
+    private static int effectivePort(URI uri) {
+        if (uri.getPort() >= 0) {
+            return uri.getPort();
+        }
+        return "https".equalsIgnoreCase(uri.getScheme()) ? 443 : 80;
+    }
+
+    private static String normalizedPath(URI uri) {
+        String path = uri.getPath();
+        if (path == null || path.isEmpty()) {
+            return "/";
+        }
+        return path.length() > 1 && path.endsWith("/")
+                ? path.substring(0, path.length() - 1)
+                : path;
+    }
+
+    public boolean isErrorNoticeAtTopOfLoginForm() {
+        if (!(driver instanceof JavascriptExecutor javascriptExecutor)) {
+            return false;
+        }
+
+        var notice = driver.findElements(errorBanner).stream()
+                .filter(org.openqa.selenium.WebElement::isDisplayed)
+                .findFirst()
+                .orElse(null);
+        var form = driver.findElements(loginForm).stream()
+                .filter(org.openqa.selenium.WebElement::isDisplayed)
+                .findFirst()
+                .orElse(null);
+        if (notice == null || form == null) {
+            return false;
+        }
+
+        return Boolean.TRUE.equals(javascriptExecutor.executeScript(
+                "return arguments[0].getBoundingClientRect().bottom <= arguments[1].getBoundingClientRect().top;",
+                notice, form));
     }
 
     public LoginPage enterUsername(String value) {
@@ -144,6 +218,10 @@ public class LoginPage extends BasePage {
     public void clickLostPassword() {
         click(lostPasswordLink);
         waitForCondition(webDriver -> isPasswordRecoveryUrl(webDriver.getCurrentUrl()));
+    }
+
+    public boolean isPasswordRecoveryFormVisible() {
+        return isVisible(passwordRecoveryForm);
     }
 
     private void waitForSubmissionOutcome() {

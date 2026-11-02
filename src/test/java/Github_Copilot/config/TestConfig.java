@@ -27,6 +27,10 @@ public final class TestConfig {
     public static int pageLoadTimeout() {
         String value = fromSystemOrEnv("pageLoadTimeout", "PAGE_LOAD_TIMEOUT_SECONDS",
                 String.valueOf(TestData.DEFAULT_PAGE_LOAD_TIMEOUT_SECONDS));
+        return parsePageLoadTimeout(value);
+    }
+
+    static int parsePageLoadTimeout(String value) {
         try {
             int timeout = Integer.parseInt(value.trim());
             return timeout > 0 && timeout <= 60 ? timeout : TestData.DEFAULT_PAGE_LOAD_TIMEOUT_SECONDS;
@@ -36,11 +40,36 @@ public final class TestConfig {
     }
 
     public static String validUsername() {
-        return fromSystemOrEnv("validUsername", "LOGIN_VALID_USERNAME", "ramesh7272");
+        return environmentCredential(System.getenv("LOGIN_VALID_USERNAME"));
     }
 
     public static String validPassword() {
-        return fromSystemOrEnv("validPassword", "LOGIN_VALID_PASSWORD", "ramesh7272");
+        return environmentCredential(System.getenv("LOGIN_VALID_PASSWORD"));
+    }
+
+    public static String expectedWelcomeIdentity() {
+        return environmentCredential(System.getenv("LOGIN_EXPECTED_WELCOME"));
+    }
+
+    static String environmentCredential(String value) {
+        return value == null || value.isBlank() ? "" : value;
+    }
+
+    public static boolean credentialsPresent(String username, String password) {
+        return username != null && !username.isBlank() && password != null && !password.isBlank();
+    }
+
+    public static CredentialStatus credentialStatus(boolean requirementsMet, boolean required) {
+        if (requirementsMet) {
+            return CredentialStatus.AVAILABLE;
+        }
+        return required ? CredentialStatus.MISSING_REQUIRED : CredentialStatus.OPTIONAL_SKIP;
+    }
+
+    public enum CredentialStatus {
+        AVAILABLE,
+        OPTIONAL_SKIP,
+        MISSING_REQUIRED
     }
 
     public static String invalidPassword() {
@@ -66,25 +95,38 @@ public final class TestConfig {
     private static String fromSystemOrEnv(String systemKey, String envKey, String defaultValue) {
         String systemValue = System.getProperty(systemKey);
         if (systemValue != null && !systemValue.isBlank()) {
-            return systemValue;
+            return resolveSetting(systemValue, null, defaultValue);
         }
 
         String envValue = System.getenv(envKey);
-        if (envValue != null && !envValue.isBlank()) {
-            return envValue;
-        }
+        return resolveSetting(null, envValue, defaultValue);
+    }
 
+    static String resolveSetting(String systemValue, String environmentValue, String defaultValue) {
+        if (systemValue != null && !systemValue.isBlank()) {
+            return systemValue;
+        }
+        if (environmentValue != null && !environmentValue.isBlank()) {
+            return environmentValue;
+        }
         return defaultValue;
     }
 
-    private static void validateTransport(String url) {
+    static void validateTransport(String url) {
+        validateTransport(url, allowInsecureLocalBaseUrl());
+    }
+
+    static void validateTransport(String url, boolean allowInsecureLocal) {
         try {
             URI uri = new URI(url);
+            if (uri.getHost() == null || uri.getHost().isBlank()) {
+                throw new IllegalArgumentException("baseUrl must include a valid host.");
+            }
             if ("https".equalsIgnoreCase(uri.getScheme())) {
                 return;
             }
 
-            if (allowInsecureLocalBaseUrl() && "http".equalsIgnoreCase(uri.getScheme()) && isLocalHost(uri.getHost())) {
+            if (allowInsecureLocal && "http".equalsIgnoreCase(uri.getScheme()) && isLocalHost(uri.getHost())) {
                 return;
             }
 

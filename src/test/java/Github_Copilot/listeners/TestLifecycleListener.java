@@ -2,17 +2,16 @@ package Github_Copilot.listeners;
 
 import Github_Copilot.config.TestConfig;
 import Github_Copilot.utils.LogUtil;
-import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.opentest4j.TestAbortedException;
+import org.junit.jupiter.api.extension.TestWatcher;
 import org.openqa.selenium.WebDriver;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 
-public class TestLifecycleListener implements BeforeEachCallback, AfterTestExecutionCallback {
+public class TestLifecycleListener implements BeforeEachCallback, TestWatcher {
 
     private static final ThreadLocal<WebDriver> DRIVER = new ThreadLocal<>();
     private static final ThreadLocal<Instant> STARTED_AT = new ThreadLocal<>();
@@ -36,25 +35,29 @@ public class TestLifecycleListener implements BeforeEachCallback, AfterTestExecu
     }
 
     @Override
-    public void afterTestExecution(ExtensionContext context) {
-        Optional<Throwable> failure = context.getExecutionException();
+    public void testSuccessful(ExtensionContext context) {
+        recordOutcome(context, TestOutcome.PASSED, null);
+    }
+
+    @Override
+    public void testFailed(ExtensionContext context, Throwable cause) {
+        recordOutcome(context, TestOutcome.FAILED, cause);
+    }
+
+    @Override
+    public void testAborted(ExtensionContext context, Throwable cause) {
+        recordOutcome(context, TestOutcome.SKIPPED, cause);
+    }
+
+    private void recordOutcome(ExtensionContext context, TestOutcome outcome, Throwable failure) {
         String testName = context.getDisplayName();
-
-        if (failure.isPresent() && failure.get() instanceof TestAbortedException) {
-            LogUtil.warn("Test skipped: " + testName + " -> " + failure.get().getMessage());
-            logFinished(testName);
-            return;
-        }
-
-        if (failure.isPresent()) {
-            LogUtil.error("Test failed: " + testName, failure.get());
-            if (DRIVER.get() != null && !TestConfig.allowFailureScreenshots()) {
-                LogUtil.warn("Failure screenshot skipped because ALLOW_FAILURE_SCREENSHOTS is not enabled.");
-            }
+        if (outcome == TestOutcome.SKIPPED) {
+            LogUtil.warn("Test skipped: " + testName + " -> " + failure.getMessage());
+        } else if (outcome == TestOutcome.FAILED) {
+            LogUtil.error("Test failed: " + testName, failure);
         } else {
             LogUtil.pass("Test passed: " + testName);
         }
-
         logFinished(testName);
     }
 
@@ -66,5 +69,6 @@ public class TestLifecycleListener implements BeforeEachCallback, AfterTestExecu
         } else {
             LogUtil.info("Finished test: " + testName);
         }
+        clearDriver();
     }
 }

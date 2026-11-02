@@ -1,92 +1,414 @@
-# Verification Report
+﻿# Stage 6 Verification Report
 
-**Feature:** Selenium Login Automation for Customer Authentication
-**Date:** 2026-09-26
-**Verdict:** PASS
-**Environment:** Windows 11, Chrome 153.x, Maven 3.9+, Java 21
-**Scope:** Targeted automation validation for login scenarios in `src/test/java/Github_Copilot`.
+## Latest Authoritative Stage 6 Required-Mode Chrome Rerun - 2026-10-14
+
+This is the latest authoritative Stage 6 execution record. It supersedes the
+older execution statuses below, which are retained as history. This required-
+mode rerun was completed after the Stage 5 PR-review fix that tightened
+dashboard-home URL matching and added focused URL tests. The route check is now
+live-verified in Chrome.
+
+### Metadata and Verdict
+
+| Item | Observed result |
+| --- | --- |
+| Scope | Required-mode, headless Chrome run of the full Maven test suite: nine login browser scenarios, three dashboard-home URL tests, and 15 other focused browser-independent tests. |
+| Environment | Windows; Chrome 155.0.8059.40. |
+| Runtime inputs | The user reports that the invoking script supplied required runtime values through masked prompts and cleared them. No credential or account identity values were read, recorded, or inferred in this report. |
+| Surefire evidence | **27 run, 27 passed, 0 failures, 0 errors, 0 skipped.** `LoginPageTests.txt` reports 9 run, 9 passed, 0 failures/errors/skips in 40.83 seconds. |
+| Screenshots | Screenshot capture remained disabled; no capture was indicated. |
+| Verdict | **PASS WITH LIMITATIONS.** Every executed check passed with zero failures, errors, or skips. Source AC 5.1 remains unmet because tests exercise browser-native validation rather than application-rendered inline errors; source compliance and unconditional acceptance are therefore not demonstrated. The prior explicit human acceptance for Stage 7 covered this same AC 5.1 limitation. |
+
+The executed tests all passed, including TS-LOG-002 feedback matching and
+TS-LOG-001's configured-welcome and destination assertions. The strengthened
+dashboard-home URL matching was exercised by the live successful-login
+scenario; the three `LoginPageUrlTests` also passed. AC 5.1 remains a separate
+source-requirement gap: the passing blank/invalid-field tests verify
+browser-native validation, not required application-rendered inline errors.
+
+### Commands and Results
+
+| Exact command / check | Observed result |
+| --- | --- |
+| `mvn --batch-mode test -Dbrowser=chrome -Dheadless=true -DrequireCredentialTests=true` | **BUILD SUCCESS** on Chrome 155.0.8059.40; the user reports all scenario lines passed. Surefire: **27 run, 27 passed, 0 failures, 0 errors, 0 skipped**. |
+| Fresh Surefire XML summary | `LoginPageTests` 9/9; `LoginPageUrlTests` 3/3; `TestConfigTests` 6/6; `TestLifecycleTests` 1/1; `CredentialTestGuardTests` 4/4; `LoginScenarioAssertionsTests` 4/4. Total **27/27 passed**. |
+| `LoginPageTests.txt` | 9 run, 9 passed, 0 failures, 0 errors, 0 skipped; elapsed time **40.83 seconds**. |
+
+The full Surefire total comprises `LoginPageTests` (9), `LoginPageUrlTests`
+(3), `TestConfigTests` (6), `TestLifecycleTests` (1),
+`CredentialTestGuardTests` (4), and `LoginScenarioAssertionsTests` (4). The
+three URL tests and 15 other focused tests all passed. The full run includes
+Maven compilation/test compilation; no separate compile-only command is
+reported for this run.
+
+### Requirements and Scenario Traceability
+
+| Requirement / scenario | Latest evidence and disposition |
+| AC 1.1-1.4 / FR-1: controls and recovery navigation | **Pass in Chrome.** Required controls and password-recovery navigation/form checks passed. |
+| AC 2.1-2.2 / TS-LOG-001: dashboard destination and welcome | **Pass in Chrome.** Authentication, configured welcome identity, strengthened configured dashboard-home URL origin/path matching, visible account content, and logout assertions passed. The refined route assertion is live-verified in this run. |
+| AC 3.1 / TS-LOG-002: invalid-password feedback and notice position | **Pass in Chrome.** Updated feedback-token matching and notice-above-form assertion passed. |
+| TS-LOG-003 / AC 4.1: unknown user | **Pass in Chrome.** |
+| TS-LOG-004: blank fields | **Pass in Chrome** for implemented browser-native required-field validation. This does not fulfill AC 5.1. |
+| TS-LOG-005: Remember Me | **Pass in Chrome**, including the profile restart scenario. |
+| TS-LOG-006 / FR-6: password recovery | **Pass in Chrome.** |
+| TS-LOG-007 and TS-LOG-008: invalid-field scenarios | **Pass in Chrome** for implemented browser-native validation checks. This does not fulfill AC 5.1. |
+| AC-UI-001: required controls | **Pass in Chrome.** |
+| AC 5.1 / FR-2 / TS-LOG-004: application-rendered inline errors for both blank fields | **Unmet source criterion.** Passing tests establish browser-native validation only; application-rendered inline errors were not observed or verified. |
+| P4-02 dashboard-home destination assertion | **Implemented and live-verified.** The successful-login Chrome scenario passed the strengthened configured origin/path check plus account-content assertion; all three `LoginPageUrlTests` passed. |
+| P4-04 / AC 5.1 source criterion | **OPEN; unmet.** Tests verify browser-native required-field validation, not application-rendered inline errors for both fields. |
+| P4-05 required-mode Stage 6 verification | **Complete: PASS WITH LIMITATIONS.** Required-mode Chrome suite passed 27/27 with zero failures, errors, and skips; AC 5.1 remains unmet. |
+| Framework focused coverage | **18/18 passed** across dashboard URL matching (3), configuration (6), lifecycle (1), credential guard (4), and scenario assertions (4). |
+
+### Framework, Limits, and Gate
+
+Chrome exercised all nine browser scenarios in headless required mode. The
+configured welcome, strengthened successful-login destination URL, invalid-
+password feedback, Remember Me restart, recovery navigation, and required
+controls passed. No CDP warning information was included in the latest run
+summary; prior CDP warnings are historical and are not attributed to this run.
+Screenshots remained disabled and no screenshot capture was indicated.
+
+No performance, slow-network, repeatability/duration, or reliability
+measurements were supplied by this run. Firefox and cross-browser coverage
+remain unrun. The repository has no configured CI workflow; no CI execution
+or artifact-upload behavior is claimed. AC 5.1's application-rendered inline
+error behavior was not exercised because the current implementation/tests
+verify browser-native validation instead.
+
+- **Impact:** Source compliance for AC 5.1 and end-to-end acceptance against
+  that source criterion are not demonstrated, despite all executed tests
+  passing.
+- **Follow-up:** Implement and observe application-rendered inline errors for
+  the required/invalid fields, or obtain an authorized requirements change.
+  Do not describe browser-native validation as satisfying AC 5.1.
+- **Stage 7 acceptance:** The prior explicit human acceptance applied to Stage 7
+  with this same AC 5.1 limitation. It does not relabel AC 5.1 as met, change
+  this verdict, establish source compliance, or authorize review publication.
+- **Next action:** Commit/push the current local review fixes only after separate
+  authorization, then update the PR and request re-review. This verification
+  task does not commit, push, or publish a review.
 
 ---
 
-## 1. Executive Summary
-The Selenium login automation framework was validated using the project’s Maven test suite and passed all executable scenarios in the current environment. The suite verifies the main authentication behaviors described in the PRD: successful login, invalid password rejection, unknown-user rejection, blank-field validation, Remember Me persistence, lost-password navigation, and required login element display.
+## Prior Stage 6 Reconciliation Snapshot — 2026-10-14
+### Metadata and Verdict
 
----
+| Item | Observed result |
+| --- | --- |
+| Scope | Rechecked the current implementation against the current requirements, approved architecture, fresh design review and accepted C1-C5 planning record, current Stage 4 plan, repository instructions, and Stage 5 handoff. Ran compile/test-compile and focused browser-independent tests. |
+| Environment | Windows 11 AMD64; Java 21.0.10 (Oracle); Maven 3.8.9; Chrome executable installed, version 155.0.8059.40. ChromeDriver resolution and target-site access were not tested. |
+| Required-variable presence | Process-environment presence only: `LOGIN_VALID_USERNAME` absent, `LOGIN_VALID_PASSWORD` absent, `LOGIN_EXPECTED_WELCOME` absent. Values were not read, requested, or printed. |
+| CI / screenshots | `.github/workflows/` is absent in the current worktree. Screenshot capture defaults to disabled; `target/screenshots/` does not exist. No browser ran and no screenshot was captured. |
+| Verdict | **BLOCKED / NO VERDICT.** The prescribed required-mode Chrome verification was not run because required runtime variables were absent. This is not PASS, PASS WITH LIMITATIONS, or an observed browser-test failure. Stage 7 is not permitted. |
 
-## 2. Maven Commands and Results
+The Stage 3 C1-C5 acceptance authorizes Stage 4 planning only; it is not
+acceptance of Stage 6 limitations. P4-02 (AC 2.1 dashboard/My Account
+destination assertion) and P4-03 (AC 3.1 notice-above-form assertion) are
+present in the current source and their focused helper/assertion tests passed.
+That evidence verifies assertion logic, not live-site destination or notice
+layout. P4-04 / source AC 5.1 remains unmet: browser-native validation is not
+application-rendered inline feedback for both fields.
 
-| Command | Result | Notes |
+### Commands and Results
+
+| Exact command | Observed result |
+| --- | --- |
+| `mvn --batch-mode -DskipTests compile test-compile` | PASS; exit code 0; main and test sources compiled or were confirmed up to date; no tests selected. |
+| `mvn --batch-mode test -Dbrowser=chrome -Dheadless=true -DrequireCredentialTests=true` | **Not run.** All three required process-environment variables were absent. No optional-mode browser test was substituted. |
+
+focused classes listed above. The Chrome executable is present, but compatible
+ChromeDriver resolution and target-site/network availability remain unknown
+Surefire suite was not run. The current `TestConfig` default keeps failure
+screenshots disabled; no browser failure path or cleanup behavior was
+exercised.
+
+
+| Requirement / criterion | Latest evidence and disposition |
+| --- | --- |
+| AC 1.1-1.4 / FR-1: login controls and password-reset navigation | Source tests for control visibility and recovery navigation exist, but all live control, click, and destination behavior is **unrun** in this execution. |
+| AC 2.1 / TS-LOG-001: dashboard/My Account destination | `LoginPageTests` now calls the destination assertion after login; `LoginPage.isMyAccountDashboardVisible()` requires visible account navigation and dashboard content. Focused assertion tests pass, including rejection when the dashboard signal is absent. Live login/destination is **unrun**. |
+| AC 2.2 / TS-LOG-001: welcome success message | Expected-identity assertion/helper coverage is included in the focused run and passed. Live authentication and welcome identity are **unrun**. |
+| AC 3.1 / TS-LOG-002: incorrect-password notice at top of form | The scenario now asserts the notice is above the visible login form using DOM bounding-box positions. Focused helper coverage rejects a false position signal. The live notice and its placement are **unrun**. |
+| AC 4.1 / TS-LOG-003: unregistered-account outcome | Live error, unauthenticated state, and retained-form behavior are **unrun**. |
+| AC 5.1 / FR-2 / TS-LOG-004: inline errors for both blank fields | **Unmet source criterion.** Current tests inspect browser-native required-field validity; this is not application-rendered inline feedback. Neither native behavior nor source-compliant inline errors were exercised in this run. Keep the PRD criterion unchanged and distinct from the project deviation. |
+| FR-3 / US-AUTH-002 overall | Required credential-dependent login was **unrun**; end-to-end acceptance is not established. |
+| Supplementary TS-LOG-005 Remember Me restart | **Unrun**; no login or browser-profile restart occurred. Restart persistence is not a source requirement. |
+| NFR-1 | The PRD gives no measurable performance/security thresholds. Performance, security testing, slow-network, repeatability, and reliability were not measured. |
+| P4-02 / P4-03 | Current source contains the planned destination and notice-position assertions. Four scenario-assertion tests passed, but live DOM/site confirmation remains blocked. |
+| P4-04 / P4-05 | AC 5.1 remains unmet; required-mode Chrome verification is blocked on runtime inputs. Neither task is closed by the focused tests. |
+| Stage 3 C1-C5 | Accepted for Stage 4 planning only. This record does not treat that acceptance as Stage 6 limitation acceptance. |
+
+### Framework and Scenario Coverage
+
+The focused checks exercised configuration precedence/validation and
+credential-status logic (6 tests), required/optional credential guards (4),
+scenario assertion helpers including destination, notice-position, welcome,
+and Remember Me negative/positive signals (4), and lifecycle outcome
+classification (1). All 15 passed. These are framework/helper results, not
+browser scenario results.
+
+Static source review confirmed environment-only credential and expected-welcome
+reads, required-mode guard behavior, Chrome/Firefox driver branches, bounded
+page-load and explicit waits, zero implicit wait, profile restart/cleanup code,
+report/listener components, and screenshot opt-in default-off. Runtime browser
+setup, live scenarios, reporting during browser tests, failure-path cleanup,
+and profile cleanup were not exercised. Firefox support was not changed;
+Firefox and cross-browser coverage are **unrun**. CI configuration/execution and
+artifact upload are **unrun**; no workflow exists in the current tree.
+
+### Blockers and Next Permitted Action
+
+- Required Chrome verification is blocked because all three required variables
+	were absent. Provide approved values only through a secure inherited process
+	environment, never in a command argument, chat, report, or log. Then rerun the
+	exact required-mode Chrome command above and record scenario-level outcomes.
+- Target-site access and ChromeDriver compatibility must be available at that
+	rerun; neither was tested here. Do not use optional credential mode as
+	evidence for required cases.
+- AC 5.1 remains a source gap regardless of the eventual browser run. Keep
+	application-rendered inline errors separate from browser-native validation.
+- Firefox/cross-browser, CI, performance, slow-network, repeatability,
+	security-scan, and screenshot checks remain unrun. Firefox support is
+	unchanged, and screenshots remain disabled.
+- Verdict remains **BLOCKED / NO VERDICT**; Stage 7 cannot proceed. This run
+	does not request or imply acceptance of PASS WITH LIMITATIONS. After the
+	required prerequisites are supplied and the required Chrome run completes,
+	update this report with observed results and the stage verdict; any proposed
+	PASS WITH LIMITATIONS requires fresh explicit user acceptance before Stage 7.
+
+### Reconciliation Note
+
+The retained 2026-10-14 block below recorded 14 focused tests and described
+P4-02 as open. The latest rerun has 15 passing focused tests because
+`LoginScenarioAssertionsTests` now contains four tests, and current source
+implements the P4-02/P4-03 assertions. Treat that older block as the prior
+same-day snapshot only; the latest results and dispositions are recorded here.
+
+**Current repository status (2026-10-14):** No `.github/workflows/` directory,
+GitHub Actions workflow, CI secret mapping, or artifact upload is present in
+the current tree. The verification below is the dated 2026-10-09 record; CI
+statements within that snapshot are historical and are not current configuration.
+
+## Stage 6 Execution Record: 2026-10-14
+
+### Metadata and Disposition
+
+| Item | Observed result |
+| --- | --- |
+| Scope | Credential-free Maven compile/test-compilation and focused unit tests; fresh required-mode Chrome acceptance was not started because its runtime prerequisites were absent. |
+| Environment | Windows 11 (AMD64); Java 21.0.10 (Oracle); Maven 3.8.9. |
+| Credential / identity availability | Presence-only status in the current process environment: `LOGIN_VALID_USERNAME`, `LOGIN_VALID_PASSWORD`, and `LOGIN_EXPECTED_WELCOME` were all absent. No values were read, requested, or printed. |
+| Verdict | **BLOCKED / NO VERDICT.** P4-02's required-mode Chrome acceptance cannot run without the approved runtime configuration. This is neither PASS, PASS WITH LIMITATIONS, nor an observed test failure. Stage 7 is unavailable. |
+
+
+
+| Exact command | Observed result |
+| `mvn -q -DskipTests compile test-compile` | PASS; exit code 0. Main and test sources compiled; no tests selected. |
+| `mvn -q "-Dtest=TestConfigTests,CredentialTestGuardTests,LoginScenarioAssertionsTests,TestLifecycleTests" test` | PASS; exit code 0. Surefire: **14 run, 14 passed, 0 failures, 0 errors, 0 skipped**: `TestConfigTests` 6, `CredentialTestGuardTests` 4, `LoginScenarioAssertionsTests` 3, `TestLifecycleTests` 1. |
+| Required-mode Chrome command: `mvn --batch-mode test -Dbrowser=chrome -Dheadless=true -DrequireCredentialTests=true` | **Not run.** Required runtime values were absent. No optional-mode browser run was substituted, and no browser executable was launched. |
+
+Fresh focused Surefire XML files were observed for the four focused classes, with the totals above. `LoginPageTests.xml` retained its 2026-10-09 timestamp and was not refreshed; its historical totals are not part of this execution. No browser test counts are reported for 2026-10-14.
+
+### Requirements and Plan Traceability
+
+| Requirement / plan criterion | 2026-10-14 evidence and disposition |
+| --- | --- |
+| FR-1 / AC-UI-001 controls | Live control visibility and clickability are **unrun**; no browser test executed. |
+| FR-2 / TS-LOG-004, TS-LOG-007, TS-LOG-008 | Source PRD criterion for application-rendered inline errors remains **unmet** by the browser-native-validation project deviation. Neither live project behavior nor source inline behavior was exercised in this execution. The deviation is not source fulfillment. |
+| FR-3 / TS-LOG-001 valid login and expected identity | **Unrun / unverified** in Chrome; valid credentials and expected identity were absent. The focused helper tests are not live authentication evidence. |
+| FR-4 / TS-LOG-002 invalid password; TS-LOG-003 unknown user | **Unrun / unverified** against the live site; TS-LOG-002's known-username prerequisite was absent. Focused assertion/guard tests passed but do not establish live rejection behavior. |
+| FR-5 / TS-LOG-005 Remember Me persistence | **Unrun / unverified**; the required credential prerequisite was absent, so login, profile restart, and restored-session assertions were not attempted. P4-01's dashboard/logout assertion is implemented and its three focused helper tests passed, but this is not browser persistence evidence. |
+| FR-6 / TS-LOG-006 recovery | **Unrun / unverified**; destination navigation and form visibility were not exercised in this record. |
+| US-AUTH-002 overall acceptance | **Not evaluated end-to-end.** Required Chrome scenarios did not execute; do not claim feature acceptance. |
+| NFR-1 performance/security | No measurable source targets are specified. Performance, slow-network, security, repeatability, and reliability checks were not run. |
+| P4-01 | Implementation and focused test evidence present: the Remember Me helper requires dashboard content and visible logout; three helper tests passed as part of the 14-test focused run. Live TS-LOG-005 remains unverified. |
+| P4-02 | **Open / blocked.** Current plan requires fresh required-mode Chrome verification. Missing runtime configuration prevents execution; it is not an observed test failure or a passing limitation run. |
+| Stage 3 C1-C5 acceptance | Accepted on 2026-10-14 for Stage 4 planning only; it does not satisfy P4-02 or accept Stage 6 limitations. |
+
+### Unrun Checks and Required Follow-Up
+
+- Required Chrome acceptance, all live-site scenarios, and fresh counts are unrun because `LOGIN_VALID_USERNAME`, `LOGIN_VALID_PASSWORD`, and `LOGIN_EXPECTED_WELCOME` were absent. Supply approved values only through a secure runtime environment, after which rerun P4-02 in required mode and record every scenario outcome. Never inspect or expose their values.
+- Firefox and all cross-browser coverage were not run; do not launch Firefox under the current Chrome-only policy.
+- Remember Me persistence across a browser restart, recovery navigation, live required-field behavior, and all other live-site assertions are unrun in this execution.
+- CI execution, artifact upload/retention, screenshots, failure-path cleanup, slow-network behavior, performance, repeatability, and reliability are unrun. Screenshot capture stayed off; no current CI workflow exists.
+- The source FR-2 inline-error criterion remains unmet by the accepted project-native-validation deviation. Keep the source requirement distinct; do not claim full feature acceptance.
+- Provide the missing approved runtime configuration, run the required Chrome command, and update this report with observed results. Until then Stage 7 is unavailable; the 2026-10-14 C1-C5 planning acceptance is not Stage 6 limitation acceptance.
+
+### Evidence Boundary
+
+Current-run evidence is limited to the two Maven commands and their exit/results above, fresh focused Surefire XML for the four focused classes, static review of current requirements/plan/source/build configuration, the presence-only credential status supplied for this process, and confirmation that `.github/workflows/` is absent. No browser executable or live site was exercised, no credentials were read or printed, and no historical browser result is attributed to this run. The existing dated 2026-10-09 and 2026-10-02 report sections below are preserved as history.
+
+## Current Verification: 2026-10-09
+
+### Metadata and Verdict
+
+| Item | Observed result |
+| --- | --- |
+| Feature / stage | Customer Login & Authentication (`US-AUTH-002`), Stage 6 rerun under the current Chrome-only policy |
+| Inputs | Requirements/PRD v2, approved architecture, revised Stage 4 plan, design review, current Java source/tests, implementation handoff, updated verification agent and skill |
+| Environment | Windows 11 (AMD64); Java 21.0.10 (Oracle); Maven 3.8.9 |
+| Browser exercised | Headless Chrome 154.0.8037.98; executable at `C:\Program Files\Google\Chrome\Application\chrome.exe`; ChromeDriver 154.0.8037.92 was found in the WebDriverManager cache. Firefox was not invoked. |
+| Credential/identity availability | Presence-only checks were false for `LOGIN_VALID_USERNAME`, `LOGIN_VALID_PASSWORD`, and `LOGIN_EXPECTED_WELCOME`. Values were not read or printed. |
+| Screenshots / reports | Capture explicitly disabled; `target/screenshots/` was absent. `target/extent-reports/ExtentReport.html` was generated. Surefire XML/text reports are under `target/surefire-reports/`. |
+| Verdict | **PASS WITH LIMITATIONS.** Every executed check passed with zero failures and errors, but the Chrome class skipped TS-LOG-001, TS-LOG-002, and TS-LOG-005 (9 run, 6 passed, 3 skipped). FR-2's source inline-error criterion remains unmet. The user explicitly accepted these limitations for Stage 7 on 2026-10-09; skipped cases remain unverified and are not passes. |
+
+P4-01 is implemented: after restarting Chrome with the same temporary profile, TS-LOG-005 calls a helper that requires nonblank dashboard content and a visible logout control. The three focused `LoginScenarioAssertionsTests` pass, including negative checks for either missing signal. TS-LOG-005 itself skipped before login because credentials were unavailable, so the restart and restored-session assertion were not exercised. TS-LOG-006 passed its expected recovery URL, visible reset-form, and unauthenticated-state assertions; this establishes navigation/form presence only, not recovery submission or completion. No Java, test, or plan files were changed during this verification.
+
+### Commands and Results
+
+All commands ran on the environment above. Credentials were not supplied on the command line or read by the verifier.
+
+| Exact command | Observed result |
+| --- | --- |
+| `mvn -q -DskipTests compile test-compile` | PASS; process completed successfully (exit 0). Compile and test-compile passed; no tests were selected. |
+| `mvn -q '-Dtest=TestConfigTests,CredentialTestGuardTests,LoginScenarioAssertionsTests,TestLifecycleTests' test` | PASS; exit 0. Surefire: **14 run, 14 passed, 0 failures, 0 errors, 0 skipped**: `TestConfigTests` 6, `CredentialTestGuardTests` 4, `LoginScenarioAssertionsTests` 3, `TestLifecycleTests` 1. |
+| `mvn -q -Dtest=LoginPageTests -Dbrowser=chrome -Dheadless=true -DrequireCredentialTests=false -DallowFailureScreenshots=false test` | Maven exit 0. Surefire: **9 run, 6 passed, 0 failures, 0 errors, 3 skipped**. TS-LOG-001, TS-LOG-002, and TS-LOG-005 skipped in optional credential mode; none is a pass. |
+
+The Chrome class took 24.796 seconds according to its Surefire XML; this is a single run, not repeatability, reliability, or performance evidence. Output emitted the SLF4J no-provider warning and Selenium 4.25.0 warnings that no matching CDP implementation was available for Chrome 154.0.8037.98. No test failure was associated with these warnings. ChromeDriver 154.0.8037.92 was present in the WebDriverManager cache; Maven/Selenium output did not log the resolved executable path.
+
+The three skips and their effects were:
+
+| Scenario | Observed skip reason | Impact / follow-up |
 |---|---|---|
-| `mvn test -q` | PASS | 8 tests executed, 8 passed |
+| TS-LOG-001 valid login | `LOGIN_VALID_USERNAME` and `LOGIN_VALID_PASSWORD` were absent; optional credential guard aborted the test. `LOGIN_EXPECTED_WELCOME` was also absent. | Authentication, expected-identity greeting, dashboard, and logout were not observed. Supply approved values through a secure process environment and rerun in required mode. |
+| TS-LOG-002 invalid password | A known valid username was absent; optional username guard aborted the test. | Live invalid-password rejection was not exercised. Supply the known username securely and rerun in required mode. |
+| TS-LOG-005 Remember Me | Valid login credentials were absent; optional credential guard aborted before login/restart. | Same-profile Chrome restart and restored dashboard/logout were not observed. Supply approved credentials and rerun in required mode. |
 
-### Observed test set
-- TS-LOG-001: Successful login with valid username/email and password
-- TS-LOG-002: Login fails with invalid password
-- TS-LOG-003: Login fails with unregistered username/email
-- TS-LOG-004: Validation appears for blank username and password
-- TS-LOG-005: Remember me persists the session across a browser restart
-- TS-LOG-006: Lost password link redirects to reset flow
-- TS-LOG-007: Validation appears when username/email is blank
-- TS-LOG-008: Validation appears when password is blank
-- AC-UI-001: Login page displays all required elements
+### Requirements and Scenario Traceability
 
-Pass count: 9/9, failure count: 0, skip count: 0.
+| Requirement / scenario | 2026-10-09 evidence and disposition |
+| --- | --- |
+| FR-1 / AC-UI-001 required controls | **Pass in Chrome.** AC-UI-001 verified username, password, Remember Me, Log in, and recovery controls. |
+| FR-2 / TS-LOG-004, TS-LOG-007, TS-LOG-008 | **Project-deviation behavior passed in Chrome.** Browser-native required-field validation blocked both-blank and individual-blank submissions. The source PRD requires application-rendered inline required-field errors; native validation does **not** satisfy that source criterion. The 2026-10-09 planning acceptance did not change the source requirement, which remains unmet. |
+| FR-3 / TS-LOG-001 valid login and identified welcome | **Skipped / unverified.** Credentials and expected identity were unavailable. The helper unit tests passed, but successful authentication, account-correlated welcome, dashboard, and logout were not observed in Chrome. |
+| FR-4 / TS-LOG-002 invalid password | **Skipped / unverified.** The known-valid-username precondition was absent. The helper unit tests passed, but live rejection of an incorrect password was not exercised. |
+| FR-4 / TS-LOG-003 unknown user | **Pass in Chrome.** Error feedback, unauthenticated state, and retained login form assertions passed. |
+| FR-5 / TS-LOG-005 Remember Me across restart | **Skipped / unverified.** Missing valid credentials prevented login and profile-restart behavior from running. |
+| FR-6 / TS-LOG-006 password recovery | **Pass for navigation and form visibility in Chrome.** The test reached the expected recovery URL, found the reset form visible, and confirmed unauthenticated state. Reset usability, submission, and completion are unverified and not claimed. |
+| US-AUTH-002 overall acceptance | **Not met.** FR-3, TS-LOG-002, and FR-5 are unverified; the source FR-2 inline-error criterion is not met by the accepted project deviation. |
+| NFR-1 performance/security | The PRD specifies no measurable thresholds. No performance, slow-network, security, or repeatability claim is made. |
 
----
+### Plan, Review, and Framework Traceability
 
-## 3. Framework Component Verification
+| Criterion / component | Disposition |
+| --- | --- |
+| P4-01 Remember Me post-restart oracle | **Implemented; focused evidence passed.** After restart with the same profile, the scenario requires nonblank dashboard content and visible logout. Three assertion-helper tests passed, including negative checks for either missing signal. Live TS-LOG-005 skipped, so browser-restart persistence remains unverified. The separate expected-identity helper also remains unit-tested; live TS-LOG-001 identity comparison is unverified. |
+| P4-02 screenshot policy | **Source verified.** Screenshot opt-in defaults false; the browser run explicitly disabled capture and produced no screenshot artifacts. No CI workflow is currently configured. Selected-input redaction does not establish page-level safety. |
+| P4-02 / Chrome-only P4-04 verification | **Incomplete.** The prescribed Chrome run used optional credential mode because required runtime values were unavailable; TS-LOG-001/002/005 skipped. The current plan's required-mode acceptance and the Stage 3 Chrome-only P4-04 condition are not met. Firefox/cross-browser verification was not run and is outside this Stage 6 scope; Firefox support was not changed. |
+| Fresh Stage 3 conditions accepted 2026-10-09 | The FR-2 deviation remains distinct from source fulfillment. P4-01 closes the assertion-helper gap, but TS-LOG-005 and FR-3 remain unverified in Chrome. Prior acceptance of planning/review conditions does not constitute acceptance of this Stage 6 report's limitations. |
+| `TestConfig` and configuration | Six config tests passed, covering environment-only credential handling/status, ordinary-setting precedence, timeout bounds, and URL transport validation. |
+| `CredentialTestGuard` | Four focused tests passed. The live optional-mode Chrome run skipped three scenarios for missing credential prerequisites. Required-mode browser execution was not attempted because runtime values were absent. |
+| `LoginScenarioAssertions` | Three focused tests passed: invalid-password outcome, expected-identity match/mismatch, and Remember Me dashboard/logout assertions including both missing-signal cases. |
+| `BaseTest`, `BasePage`, and `LoginPage` | Source shows fresh per-test Chrome drivers, bounded page-load/explicit waits, zero implicit wait, and teardown. Ordinary scenario setup/teardown completed without observed test errors. Remember Me profile restart and failure-path cleanup were not exercised. Recovery assertions cover URL and visible form, not usability. |
+| Lifecycle, logging, reports, and cleanup | The lifecycle unit test passed. Runtime logs recorded pass/skip outcomes and durations; Surefire reports contain the observed counts, and `target/extent-reports/ExtentReport.html` was generated. Screenshot capture was disabled and no screenshot directory was created. Chrome setup/teardown ran for the scenario class; the Remember Me test aborted before restart, so persistence is unverified. The best-effort temporary-profile cleanup path ran at teardown after the assumption abort, but directory removal was not independently inspected. Failure-path cleanup remains unverified. |
+| CI / integration | No CI workflow was run and no remote artifacts were inspected. The current repository has no configured GitHub Actions workflow; prior workflow-configuration observations in historical artifacts do not represent current configuration. |
 
-| Component | Verification Result | Evidence |
-|---|---|---|
-| `TestConfig` | PASS | Base URL, browser, headless, and timeout resolution was exercised through framework defaults and validation logic |
-| `BaseTest` | PASS | Driver lifecycle setup and teardown completed for each scenario |
-| `BasePage` | PASS | Reusable waits, clicks, typing, and URL checks functioned during test execution |
-| `LoginPage` | PASS | Login workflow actions and validation checks matched expected site behavior |
-| `LoginPageTests` | PASS | SCenarios validated successful and unsuccessful login paths |
-| Reporting/listeners | PASS | Lifecycle logging and reporting were active during test execution |
+### Limitations and Required Follow-Up
 
----
+- The source FR-2 criterion is application-rendered inline required-field feedback. The accepted browser-native project deviation is not evidence that this source requirement is satisfied. Resolve the source criterion with the product/requirements owner or implement the source behavior; do not relabel native validation as inline feedback.
+- The three credential-dependent scenarios skipped as detailed above. These skips leave FR-3, live invalid-password behavior in TS-LOG-002, and FR-5 unverified; rerun Chrome in required mode when all approved runtime values are available.
+- Supply approved values for `LOGIN_VALID_USERNAME`, `LOGIN_VALID_PASSWORD`, and `LOGIN_EXPECTED_WELCOME` to the Maven process only through a secure runtime environment or CI secrets. Rerun the required Chrome acceptance suite, including TS-LOG-001, TS-LOG-002 with its known-username precondition, and TS-LOG-005 in required mode; never expose values in commands, logs, reports, or artifacts.
+- Firefox/cross-browser coverage remains unrun and is outside this Stage 6 execution scope by user direction. No Firefox executable was invoked and no Firefox support was changed.
+- Keep screenshot capture disabled until page-level sensitive-data safety and artifact access/retention are reviewed. This run provides no screenshot-safety evidence beyond confirming capture stayed off.
+- CI execution, recovery submission/completion, driver/profile failure cleanup, slow-network behavior, performance thresholds, and repeatability/reliability targets remain unverified. The user explicitly accepted this report's limitations for Stage 7 on 2026-10-09, as recorded in the verdict above; this acceptance does not convert skipped scenarios or the unmet FR-2 source criterion into passes.
 
-## 4. Scenario Coverage
+### Evidence Boundary
 
-| Scenario | Status | Evidence |
-|---|---|---|
-| Valid login | PASS | Authenticated dashboard and logout/welcome state observed |
-| Invalid password | PASS | Error flow and unauthenticated state observed |
-| Unknown user | PASS | Error flow and login form remained visible |
-| Blank username/password | PASS | Native validation and required-field messaging observed |
-| Remember Me | PASS | Session persisted after browser restart with reused profile |
-| Lost password link | PASS | Redirect to password recovery route observed |
-| Required elements | PASS | Username, password, checkbox, button, and link were visible |
-
----
-
-## 5. Performance and Reliability Observations
-- Execution time remained within normal Selenium test ranges for the observed scenarios.
-- No flaky or repeated-run failures were observed during this validation pass.
-- Browser-driver warnings were logged for Chrome CDP version matching, but they did not block execution.
+Current-run evidence comprises the three exact Maven commands and results above, generated Surefire XML/text, Chrome runtime logs, generated Extent output, source/configuration review, Chrome/ChromeDriver/Java/Maven versions, and presence-only environment checks. Credentials were not read or printed. No Firefox, CI, performance, slow-network, or repeatability run was performed. No historical result below is attributed to this run. The 2026-10-02 report is retained after this separator for audit context only.
 
 ---
 
-## 6. Logging, Screenshots, and Cleanup
-- Test lifecycle reporter executed successfully for each scenario.
-- Browser cleanup completed after each test run.
-- Temporary profile directories for Remember Me were removed after test completion.
-- No credentials were exposed in the observed console output or generated test results.
+## Historical Report: 2026-10-02
 
----
+The following report is the original 2026-10-02 record. Its evidence, results, and limitations remain historical and are not current-run results.
 
-## 7. Known Limitations
-- Browser-driver compatibility warnings were observed for the installed Chrome version and Selenium version pairing.
-- Credential-dependent tests are configured to skip cleanly when credentials are absent; they were not required in this local run because default values were accepted.
-- This verification covers the current environment and does not claim broader live-site or cross-browser performance beyond observed execution.
+## Metadata and Verdict
 
----
+| Item | Observed result |
+| --- | --- |
+| Feature / stage | Customer Login & Authentication (`US-AUTH-002`), Stage 6 re-verification |
+| Date / environment | 2026-10-02; Windows 11; Java 21.0.10; Maven 3.8.9 |
+| Browser versions | Chrome 154.0.8037.59 (ChromeDriver 154.0.8037.92); Firefox executed, version not captured |
+| Credential availability | Presence-only checks in the Maven execution context returned false for both required variables. This conflicts with the reported local configuration; the test process did not receive them. Values were never read or echoed. |
+| Screenshots | Disabled with `-DallowFailureScreenshots=false`; no screenshot files found |
+| Verdict | **FAIL** |
 
-## 8. Traceability
-- Implementation plan: `docs/sdlc/impl-plan.md`
-- Requirements: `docs/sdlc/requirements.md`
-- Architecture: `docs/sdlc/architecture.md`
-- Source files: `src/test/java/Github_Copilot/...`
+Compilation and the 11 focused unit tests passed. Headless Chrome and Firefox reached the target only through repository tests; public scenarios passed. Required-credential mode correctly failed valid login, invalid-password-with-known-user, and Remember Me at the credential guard. These acceptance paths therefore remain unverified. The source PRD's inline-error wording is not claimed met: the human-approved project deviation accepts browser-native required-field validation, and that project behavior passed. Customer-correlated greeting identity, screenshot data safety, and the complete authenticated browser matrix remain unverified. **Stage 7 is not allowed** by the verification criteria.
 
-**Final Verdict:** PASS
+## Maven Evidence
+
+| Exact command | Result |
+| --- | --- |
+| `mvn -q -DskipTests compile test-compile` | PASS; exit 0; 1.861 s; compile and test-compile only. |
+| `mvn -q '-Dtest=TestConfigTests,CredentialTestGuardTests,LoginScenarioAssertionsTests,TestLifecycleTests' test` | PASS; exit 0; 2.842 s; 11 passed, 0 failed, 0 skipped (6 config, 3 credential guard, 1 scenario assertion, 1 lifecycle). |
+| `mvn -q -Dheadless=true -DrequireCredentialTests=true -DallowFailureScreenshots=false -Dbrowser=chrome test` | FAIL; exit 1; command summary reported 29 tests, 3 failed, 0 errors, 0 skipped; 29.597 s. No per-run XML was retained to reconcile this count. |
+| `mvn -q -Dheadless=true -DrequireCredentialTests=true -DallowFailureScreenshots=false -Dbrowser=firefox test` | FAIL; exit 1; 20 tests, 17 passed, 3 failed, 0 errors, 0 skipped; 76.283 s. |
+| `mvn -q -Dheadless=true -DrequireCredentialTests=true -DallowFailureScreenshots=false -Dbrowser=chrome test` (repeat) | FAIL; exit 1; 20 tests, 17 passed, 3 failed, 0 errors, 0 skipped; 28.412 s. Latest Surefire XML confirms 9 `LoginPageTests`: 6 passed, 3 failed, 0 skipped. |
+
+The three failures in each browser run were `shouldLoginSuccessfullyWithValidCredentials`, `shouldShowErrorForInvalidPassword`, and `shouldPersistSessionWhenRememberMeIsEnabled`. Each failed at the required-credential guard, not at an authentication assertion. Required mode surfaced missing runtime configuration as failures rather than skips. The latest retained Surefire set contains 20 testcases: 11 focused unit cases and 9 `LoginPageTests`. An older zero-test `LoginPageRunner` report is excluded. The initial Chrome summary's 29-test count conflicts with the later Chrome repeat, Firefox summary, and retained XML (20); reports shared `target/surefire-reports`, so the discrepancy cannot now be independently reconciled. Maven 3.8.9 is below the README's Maven 3.9+ prerequisite, though the requested commands completed.
+
+## Scenario Results
+
+| Requirement / scenario | Chrome repeat | Firefox | Evidence |
+| --- | --- | --- | --- |
+| FR-1 / AC-UI-001 required controls | PASS | PASS | Username, password, Remember Me, Log in, and recovery link visibility assertions passed. |
+| FR-2 / TS-LOG-004 both blank | PASS under approved project deviation | PASS under approved project deviation | Native validation identified both empty controls; form remained visible and user unauthenticated. This does **not** establish the source PRD's inline-error wording. |
+| FR-2 / TS-LOG-007 blank username | PASS under approved project deviation | PASS under approved project deviation | Native required-field outcome passed; no application-rendered inline feedback is claimed. |
+| FR-2 / TS-LOG-008 blank password | PASS under approved project deviation | PASS under approved project deviation | Native required-field outcome passed; no application-rendered inline feedback is claimed. |
+| FR-3 / TS-LOG-001 valid login and customer identity | FAIL at credential guard | FAIL at credential guard | Valid-login behavior and greeting identity were not exercised. |
+| FR-4 / TS-LOG-002 invalid password | FAIL at credential guard | FAIL at credential guard | Known-valid-username path was not exercised. The assertion helper's negative unit test passed. |
+| FR-4 / TS-LOG-003 unknown user | PASS | PASS | Target returned an accepted unknown-user error and remained unauthenticated with the form visible. |
+| FR-5 / TS-LOG-005 Remember Me across restart | FAIL at credential guard | FAIL at credential guard | Login, profile-preserving browser restart, and restored-session behavior were not exercised. |
+| FR-6 / TS-LOG-006 recovery navigation | PASS | PASS | Recovery link reached the matching recovery URL and stayed unauthenticated. |
+
+The FR-2 project deviation is recorded separately from the unchanged source criterion: the source PRD asks for application-rendered inline errors; the approved project acceptance instead allows browser-native required-field validation. Passing TS-LOG-004/007/008 is evidence only for the approved project behavior, not fulfillment of the source wording.
+
+## Plan and Conditions
+
+| Plan item | Disposition | Evidence / gap |
+| --- | --- | --- |
+| T01 | Verified | Credentials are sourced from runtime environment variables only. Presence check found them unavailable to the Maven process; required mode failed clearly without exposing values. |
+| T02 | Partial; incomplete | Active invalid-password assertions and negative unit coverage passed. Live TS-LOG-002 stopped at the credential guard. |
+| T03 | Resolved for project scope by explicit deviation | Human decision accepts native validation; TS-LOG-004/007/008 passed. Source PRD wording remains unchanged and is not claimed met. |
+| T04 | Incomplete | Valid login was blocked. `hasCustomerIdentifyingWelcome` accepts nonblank text after `Hello ` and does not correlate it to the authenticated account. |
+| T05 | Incomplete | Screenshots were disabled and none were produced. Page-level personal-data safety, synthetic-account policy, and failure-capture behavior remain unproven. |
+| T06 | Verified | Focused configuration tests cover credential absence/presence and required/optional behavior, non-secret setting precedence, timeout boundaries, and URL transport; all six config tests passed. |
+| T07 | Partial | Chrome and Firefox driver setup, navigation, and ordinary teardown ran. Remember Me profile restart and failure-path leak behavior were not independently verified. |
+| T08 | Verified by source and suite | Scenario tests remain independently discoverable; no credentials were added to test data. |
+| T09 | Partial | Surefire output records per-test pass/fail and elapsed time; lifecycle outcome-classification test passed. Extent failure-report handling was not verified in this rerun. |
+| T10 | Configuration inspected; CI unverified | Workflow guide/YAML describe serial headless browsers, required secret mapping, Surefire artifacts, disabled screenshots, and local Extent output. No CI run or uploaded artifact was inspected. |
+| T11 | Partial; incomplete | Chrome and Firefox reached the target through tests. Public scenarios passed; three required-credential scenarios failed at the guard in each browser. Authenticated login and browser-restart acceptance remain unverified. |
+| T12 | Not run | No repeatable network-throttling method was exercised; no slow-network or performance-threshold claim is made. |
+
+| Design-review condition | Disposition |
+| --- | --- |
+| C1: remove embedded credentials and JVM-property sourcing | **Met**; code path and required-mode behavior checked without reading secret values. |
+| C2: effective invalid-password assertions | **Partial, not complete**; assertions and negative unit coverage pass, but live TS-LOG-002 did not pass the credential guard. |
+| C3: resolve native versus inline FR-2 behavior | **Resolved by explicit project deviation**; native validation is approved and observed. The source PRD inline-error criterion is not claimed met or rewritten. |
+| C4: identify the customer in the success welcome | **Incomplete**; no successful-login evidence, and helper does not correlate greeting identity to account. |
+| C5: prevent screenshot personal-data exposure | **Incomplete**; capture stayed disabled; redaction beyond input fields is unproven. |
+| C6: actual live browser verification | **Partial, not complete**; Chrome and Firefox public scenarios ran, but credential-dependent acceptance paths failed at the required-secret guard. |
+
+## Diagnostics and Limitations
+
+| Area | Result |
+| --- | --- |
+| Repeatability / elapsed time | Browser command wall times were Chrome 29.597 s initially, Firefox 76.283 s, Chrome repeat 28.412 s. The retained 20-test Chrome repeat and Firefox runs each had 17 passes and the same 3 required-credential failures. This is limited repeat evidence, not a performance SLA. The initial Chrome count discrepancy remains unexplained. |
+| Logging | Surefire testcase output records pass/fail and elapsed time; missing-secret failures are explicit. `TestLifecycleTests` passed its pass/fail/aborted classification test. |
+| Screenshots | No screenshot files found. All browser commands explicitly disabled capture; screenshot redaction and failure capture were not exercised. |
+| Driver/profile cleanup | Ordinary browser setup/teardown ran. Remember Me profile restart did not execute; failure-path cleanup remains unverified. |
+| Browser/tool warnings | Chrome output records Selenium CDP mismatch warnings for Chrome 154.0.8037.59 with Selenium 4.25.0; SLF4J has no provider. Public scenarios passed despite these warnings. Firefox version was not captured. |
+| CI | Workflow YAML and guide inspected; no remote CI run or uploaded artifact observed. Proposed pre-commit checks are documentation, not an installed hook. |
+| Network shaping | Not exercised; T12 remains unverified. |
+
+## Recommended Actions
+
+1. Make the approved credentials available to the Maven process through its runtime environment; rerun TS-LOG-001/002/005 with `-DrequireCredentialTests=true`. Keep values out of arguments, logs, screenshots, and reports.
+2. Strengthen TS-LOG-001 to compare the customer-identifying greeting to the authenticated account without emitting that identity.
+3. Keep screenshot capture disabled until representative authenticated failure data is shown safe/redacted and an artifact policy is approved.
+4. Run the complete serial Chrome/Firefox CI matrix and inspect artifacts. Run T12 only if repeatable throttling is available.
+5. Investigate the first Chrome test-count discrepancy and preserve separate per-run Surefire reports on the next pass.
+
+## Traceability
+
+Inputs reviewed: [requirements](requirements.md), [implementation plan](impl-plan.md), canonical [repository instructions](../../copilot-instructions.md), [README](../../README.md), [Maven configuration](../../pom.xml), [workflow YAML](../../.github/workflows/selenium-login.yml), and [workflow guide](../../.github/workflows/selenium-login-workflow.md). Runtime evidence is in [TestConfig](../../src/test/java/Github_Copilot/config/TestConfig.java), [TestConfigTests](../../src/test/java/Github_Copilot/config/TestConfigTests.java), [BaseTest](../../src/test/java/Github_Copilot/base/BaseTest.java), [LoginPage](../../src/test/java/Github_Copilot/pages/LoginPage.java), [LoginPageTests](../../src/test/java/Github_Copilot/tests/LoginPageTests.java), [scenario assertions](../../src/test/java/Github_Copilot/tests/LoginScenarioAssertions.java), [credential guard](../../src/test/java/Github_Copilot/tests/CredentialTestGuard.java), and [lifecycle tests](../../src/test/java/Github_Copilot/listeners/TestLifecycleTests.java). The latest retained reports are under `target/surefire-reports/`; the Chrome repeat overwrote the preceding per-browser XML snapshots.

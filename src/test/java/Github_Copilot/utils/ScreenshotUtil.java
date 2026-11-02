@@ -41,7 +41,11 @@ public final class ScreenshotUtil {
             LogUtil.error("Unable to capture screenshot", ex);
             return null;
         } finally {
-            restoreSensitiveFields(driver);
+            try {
+                restoreSensitiveFields(driver);
+            } catch (RuntimeException ex) {
+                LogUtil.warn("Sensitive form values could not be restored after screenshot handling.");
+            }
         }
     }
 

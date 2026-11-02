@@ -1,12 +1,90 @@
 ﻿# Stage 6 Verification Report
 
-## Latest Authoritative Stage 6 Required-Mode Chrome Rerun - 2026-10-14
+## Local Stage 5 Follow-up Verification — 2026-11-02
 
-This is the latest authoritative Stage 6 execution record. It supersedes the
-older execution statuses below, which are retained as history. This required-
-mode rerun was completed after the Stage 5 PR-review fix that tightened
-dashboard-home URL matching and added focused URL tests. The route check is now
-live-verified in Chrome.
+This addendum verifies the local Stage 5 follow-up only: PR-description footer
+wording, the dashboard URL-fragment mismatch regression test, and architecture
+AC 2.1 traceability wording. Login framework implementation behavior was not
+changed. This is a fresh focused verification, not a rerun of the browser suite
+or a replacement for the historical Chrome execution below.
+
+### Metadata and Verdict
+
+| Item | Observed result |
+| --- | --- |
+| Scope | Compile/test-compile; focused URL, configuration, credential-guard, scenario-assertion, and lifecycle tests; review of the three allowed Stage 5 diffs. |
+| Environment | Windows 11 AMD64; Java 21.0.10 (Oracle); Maven 3.8.9. A Chrome executable exists at `C:\Program Files\Google\Chrome\Application\chrome.exe`; its version and ChromeDriver resolution were not checked. |
+| Runtime-variable presence | `LOGIN_VALID_USERNAME`, `LOGIN_VALID_PASSWORD`, and `LOGIN_EXPECTED_WELCOME` were absent from the process environment. Non-secret `BASE_URL`, `BROWSER`, `HEADLESS`, `REQUIRE_CREDENTIAL_TESTS`, and `ALLOW_INSECURE_LOCAL_BASE_URL` were also absent. Only presence was checked; no values were read or printed. |
+| Site/browser readiness | Target-site access was not tested. The browser executable alone does not establish a runnable Selenium environment. Required runtime identity/credential variables were absent, so browser verification was not run. |
+| Verdict | **PASS WITH LIMITATIONS.** Both Maven commands completed successfully; 19 focused tests passed with 0 failures, 0 errors, and 0 skips. AC 5.1 remains unmet, and no fresh browser scenario evidence is available. This is not a full-suite or source-compliant PASS. |
+
+### Exact Commands and Results
+
+| Exact command/check | Observed result |
+| --- | --- |
+| `mvn -q -DskipTests compile test-compile` | **PASS**, exit code 0; production and test sources compiled; no tests selected. |
+| `mvn -q -Dtest=LoginPageUrlTests,TestConfigTests,CredentialTestGuardTests,LoginScenarioAssertionsTests,TestLifecycleTests test` | A first invocation in PowerShell failed at command parsing (`Missing argument in parameter list`) because the comma-separated property was unquoted; Maven did not run and 0 tests ran. |
+| `mvn -q "-Dtest=LoginPageUrlTests,TestConfigTests,CredentialTestGuardTests,LoginScenarioAssertionsTests,TestLifecycleTests" test` | **PASS**, exit code 0. Surefire XML: **19 run, 19 passed, 0 failures, 0 errors, 0 skipped**. `LoginPageUrlTests` 4/4; `TestConfigTests` 6/6; `CredentialTestGuardTests` 4/4; `LoginScenarioAssertionsTests` 4/4; `TestLifecycleTests` 1/1. |
+| `git diff --check -- docs/sdlc/architecture.md docs/sdlc/pr-description.md src/test/java/Github_Copilot/pages/LoginPageUrlTests.java` | **PASS**, no whitespace errors. |
+
+The failed PowerShell parse was corrected by quoting the Maven property; it is
+not counted as a Maven test failure. The focused run selected no live browser
+scenarios. Its zero skipped count applies only to the 19 selected tests; it
+does not imply browser scenarios ran.
+
+### Stage 5 Change Traceability
+
+| Follow-up change / criterion | Current evidence and disposition |
+| --- | --- |
+| `LoginPageUrlTests.rejectsDashboardHomeFragmentMismatch`; P4-02 / AC 2.1 URL matching | The test now rejects a current account URL containing a fragment when the configured URL has none, and rejects a different current/configured fragment. The existing `LoginPage.isDashboardHomeUrl` comparison includes raw query and fragment equality. The focused test class passed 4/4. This verifies the URL predicate regression only; no browser login or live dashboard destination was exercised. |
+| Architecture AC 2.1 traceability wording | The changed row now distinguishes destination URL matching from account-content, authentication, and welcome checks, and explicitly retains AC 5.1 as a separate gap. Static review found that wording consistent with the implementation and plan. |
+| PR-description footer wording | The footer now describes this file as the PR #5 description artifact and directs mutable state/review status to the live PR link. This is a documentation change only. Requester-provided context says PR #5 is verified MERGED; no GitHub query or PR update was performed. |
+| AC 5.1 / FR-2 / TS-LOG-004 | **Still unmet.** The source requires application-rendered inline errors for both blank fields. Existing browser-native validation checks do not fulfill that criterion. No source wording or implementation behavior was changed in this follow-up. |
+| Other source scenarios and supplementary browser cases | No fresh evidence. Valid/invalid login, unknown user, blank/invalid fields, Remember Me, recovery navigation, required-control interactions, and authenticated cleanup were not run in a browser during this verification. Historical Chrome results below remain historical only. |
+
+### Framework, Artifacts, and Limitations
+
+- The current focused suites provide fresh unit-level evidence for URL matching,
+  configuration (6 tests), credential guards (4), scenario assertions (4),
+  and lifecycle classification (1). Driver creation/quit, temporary-profile
+  cleanup, explicit waits against the site, and actual login behavior were not
+  exercised by this run.
+- Chrome was not launched. No screenshots were produced or inspected; screenshot
+  capture behavior was not freshly exercised. Firefox and cross-browser
+  coverage remain unrun.
+- Target-site connectivity was not probed. Chrome version/driver availability
+  was not confirmed. Missing required login runtime variables independently
+  prevented a safe valid-login browser run.
+- No performance, slow-network, repeatability, or flakiness measurement was
+  made. Report/log artifact behavior beyond the focused Surefire result was not
+  evaluated in a browser run.
+- `.github/workflows/` is absent in the current tree; no CI run or CI artifact
+  handling is claimed.
+- Current follow-up worktree changes are not committed or published. The
+  existing `.vscode/mcp.json` and `docs/sdlc/code-review-report.md` modifications
+  were left untouched.
+
+**Impact and follow-up:** This evidence closes only the new local URL-fragment
+unit-test check and validates the limited documentation edits. It does not
+provide a fresh Chrome run and does not resolve source AC 5.1. A source-compliant
+result requires observed application-rendered inline errors with matching
+automation evidence, or an authorized source-requirements change. The requester
+reports PR #5 is already merged; updating that PR is not an available next
+action. Any separately authorized follow-up must be scoped and verified
+independently. Hand this report to the orchestrator/human; do not infer
+publication, a new PR, or source compliance.
+
+---
+
+## Historical Authoritative Stage 6 Required-Mode Chrome Run — 2026-10-14
+
+This is a historical execution record retained for continuity. It predates the
+2026-11-02 local follow-up and is not fresh evidence for that change. The
+required-mode rerun was completed after the earlier Stage 5 dashboard-home
+route refinement. The route check reported there was live-verified in Chrome
+at that time; it does not establish that the newly added fragment-mismatch test
+was included (that historical report lists three URL tests) or that a browser
+run occurred during the current verification.
 
 ### Metadata and Verdict
 

@@ -31,7 +31,27 @@ it in source, assertion messages, reports, or screenshots.
 - `LOGIN_UNKNOWN_USERNAME` (optional)
 
 Failure screenshots are disabled by default. No CI workflow or artifact upload
-is configured in this repository.
+is configured in this repository. Keep reports and any explicitly enabled
+screenshots on controlled local storage. Page content may contain sensitive
+information beyond redacted form fields; review it before use, restrict access
+and retention, and do not share or upload artifacts without authorization.
+
+## Current Scenario Traceability
+
+The accepted implementation baseline identifies only **TS-LOG-001**
+(successful login), **TS-LOG-002** (incorrect password), and **TS-LOG-003**
+(unregistered account) as source scenarios. The user reported removal of AC 5.1
+and TS-LOG-004; that source revision was not independently verified. Blank
+field checks below are project regressions only and do not fulfill the former
+AC 5.1.
+
+| Browser checks | Current classification |
+| --- | --- |
+| Successful login, incorrect password, unregistered account | Source scenarios TS-LOG-001, TS-LOG-002, TS-LOG-003 |
+| Both fields blank; username blank; password blank | REG-NATIVE-BOTH, REG-NATIVE-USERNAME, REG-NATIVE-PASSWORD — supplemental native-validation regressions |
+| Remember Me selection and same-profile browser restart | REG-REMEMBER-RESTART — supplemental; no persistence-duration guarantee |
+| Lost-password link and recovery destination | REG-RECOVERY — supplemental navigation check for AC 1.4; does not submit a reset |
+| Required login controls | REG-CONTROLS — supplemental visibility checks for AC 1.1–1.3 |
 
 ## Run Tests
 ```powershell

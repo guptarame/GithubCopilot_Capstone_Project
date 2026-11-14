@@ -15,13 +15,22 @@ final class LoginScenarioAssertions {
 
     static void assertInvalidPasswordOutcome(
             String message, boolean loggedIn, boolean loginFormVisible, boolean errorAtTopOfForm) {
-        assertTrue(containsAny(message.toLowerCase(), TestData.INVALID_PASSWORD_MESSAGE_TOKENS),
+        assertTrue(containsAny(normalize(message), TestData.INVALID_PASSWORD_MESSAGE_TOKENS),
                 "Expected an incorrect-password style error message.");
         assertAll(
                 () -> assertFalse(loggedIn, "Invalid login must not authenticate the user."),
                 () -> assertTrue(loginFormVisible, "Invalid login should remain on the login page."),
                 () -> assertTrue(errorAtTopOfForm,
                         "Expected the incorrect-password notice above the login form.")
+        );
+    }
+
+    static void assertUnknownUserOutcome(String message, boolean loggedIn, boolean loginFormVisible) {
+        assertTrue(containsAny(normalize(message), TestData.UNKNOWN_USER_MESSAGE_TOKENS),
+                "Expected feedback that the account is unregistered or does not exist.");
+        assertAll(
+                () -> assertFalse(loggedIn, "Unknown-account login must not authenticate the user."),
+                () -> assertTrue(loginFormVisible, "Unknown-account login should remain on the login page.")
         );
     }
 
@@ -71,5 +80,9 @@ final class LoginScenarioAssertions {
 
     private static boolean containsAny(String text, List<String> tokens) {
         return tokens.stream().anyMatch(text::contains);
+    }
+
+    private static String normalize(String text) {
+        return text == null ? "" : text.toLowerCase(java.util.Locale.ROOT);
     }
 }

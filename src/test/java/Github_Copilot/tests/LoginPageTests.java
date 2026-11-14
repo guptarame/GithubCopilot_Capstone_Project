@@ -71,19 +71,14 @@ class LoginPageTests extends BaseTest {
                 .enterUsername(TestConfig.unknownUsername())
                 .enterPassword(TestConfig.invalidPassword())
                 .submitLogin()
-                .getFeedbackMessage()
-                .toLowerCase();
+                .getFeedbackMessage();
 
-        assertTrue(containsAny(message, TestData.UNKNOWN_USER_MESSAGE_TOKENS),
-                "Expected unknown-user style error message.");
-        assertAll(
-                () -> assertFalse(loginPage.isLoggedIn(), "Unknown-user login must not authenticate the user."),
-                () -> assertTrue(loginPage.isLoginFormVisible(), "Unknown-user login should remain on the login page.")
-        );
+        LoginScenarioAssertions.assertUnknownUserOutcome(
+                message, loginPage.isLoggedIn(), loginPage.isLoginFormVisible());
     }
 
     @Test
-        @DisplayName("TS-LOG-004: Browser validation blocks blank fields; PRD inline behavior unresolved")
+    @DisplayName("REG-NATIVE-BOTH: Native validation blocks both blank fields (supplemental regression)")
     void shouldShowValidationForBlankFields() {
         LoginPage loginPage = new LoginPage(driver).openPage(TestConfig.baseUrl());
 
@@ -103,7 +98,7 @@ class LoginPageTests extends BaseTest {
     }
 
     @Test
-        @DisplayName("TS-LOG-007: Browser validation blocks blank username; PRD inline behavior unresolved")
+    @DisplayName("REG-NATIVE-USERNAME: Native validation blocks a blank username (supplemental regression)")
     void shouldShowValidationForBlankUsername() {
         LoginPage loginPage = new LoginPage(driver).openPage(TestConfig.baseUrl());
 
@@ -123,7 +118,7 @@ class LoginPageTests extends BaseTest {
     }
 
     @Test
-        @DisplayName("TS-LOG-008: Browser validation blocks blank password; PRD inline behavior unresolved")
+    @DisplayName("REG-NATIVE-PASSWORD: Native validation blocks a blank password (supplemental regression)")
     void shouldShowValidationForBlankPassword() {
         LoginPage loginPage = new LoginPage(driver).openPage(TestConfig.baseUrl());
 
@@ -143,7 +138,7 @@ class LoginPageTests extends BaseTest {
     }
 
     @Test
-    @DisplayName("TS-LOG-005: Remember me persists the session across a browser restart")
+    @DisplayName("REG-REMEMBER-RESTART: Remember Me same-profile restart regression (supplemental)")
     void shouldPersistSessionWhenRememberMeIsEnabled() throws IOException {
         requireValidCredentials("remember-me persistence");
 
@@ -176,7 +171,7 @@ class LoginPageTests extends BaseTest {
     }
 
     @Test
-    @DisplayName("TS-LOG-006: Lost password link redirects to reset flow")
+    @DisplayName("REG-RECOVERY: AC 1.4 Lost password navigation to reset flow (supplemental)")
     void shouldNavigateToLostPasswordPage() {
         LoginPage loginPage = new LoginPage(driver).openPage(TestConfig.baseUrl());
 
@@ -191,7 +186,7 @@ class LoginPageTests extends BaseTest {
     }
 
     @Test
-    @DisplayName("AC-UI-001: Login page displays all required elements")
+    @DisplayName("REG-CONTROLS: AC 1.1-1.3 required controls are visible (supplemental)")
     void shouldDisplayAllRequiredLoginElements() {
         LoginPage loginPage = new LoginPage(driver).openPage(TestConfig.baseUrl());
 

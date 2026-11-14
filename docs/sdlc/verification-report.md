@@ -1,5 +1,185 @@
 ﻿# Stage 6 Verification Report
 
+## Current Stage 6 R4 acceptance and publication addendum — 2026-11-03 00:57 (+05:30)
+
+The user accepted the **PASS WITH LIMITATIONS** verdict, including that all
+nine Chrome scenarios remain unrun and the user-reported Confluence removal
+remains unverified. This acceptance permits Stage 7 progression only; it does
+not change the scenario skips/unruns, verify Confluence, or establish browser
+or source-compliance pass evidence. The user also authorized commit/push and a
+follow-up PR against `master`. Merge is **not authorized**.
+
+## Independent Verification of Stage 5 R4-01–R4-04 — 2026-11-03
+
+### Metadata, scope, and verdict
+
+| Item | Observed result |
+|---|---|
+| Scope | Independent review of the Stage 5 implementation handoff and changed Java/tests against the accepted requirements artifact, approved architecture, Stage 3 design review, and current R4 plan; compile/test-compile; focused browser-independent Maven tests. |
+| Environment | Windows; Java 21.0.10; Maven 3.8.9. README specifies Maven 3.9+. The two Maven checks below nevertheless completed successfully with the installed version. |
+| Baseline | At 2026-11-03 00:39 (+05:30), the user accepted the reported removal of AC 5.1 and TS-LOG-004 as the governing baseline. The current Confluence revision remains independently unverified. This report does not claim the former AC 5.1 was satisfied. |
+| Verdict | **PASS WITH LIMITATIONS.** Compilation and all 28 selected focused tests passed with zero failures, errors, or skips. Required live-site scenarios were not run because required login identity/credential environment variables were absent and ChromeDriver/site readiness was not established. |
+
+This report covers the current Stage 6 run; earlier entries below are retained
+as historical evidence and are not fresh evidence for this Stage 5 change.
+No source or test code was changed during verification. The existing worktree
+changes were preserved.
+
+### Exact checks and results
+
+| Exact command/check | Result |
+|---|---|
+| `mvn -q -DskipTests compile test-compile` | **PASS**, exit code 0. Main and test sources compiled; no tests executed. |
+| `mvn -q "-Dtest=LoginPageUrlTests,TestConfigTests,CredentialTestGuardTests,LoginScenarioAssertionsTests,TestLifecycleTests,BaseTestLifecycleTests" test` | **PASS**, exit code 0; **28 tests, 0 failures, 0 errors, 0 skipped**. Class totals are listed below. |
+| `git diff --check` | **PASS**, no whitespace errors. |
+| `git diff --check -- docs/sdlc/verification-report.md` | **PASS**, report edit has no whitespace errors. |
+| `mvn --batch-mode test -Dbrowser=chrome -Dheadless=true -DrequireCredentialTests=true` | **NOT RUN**. Required credential/identity variables were absent; ChromeDriver availability and site access were not established. This is unrun, not a skip or pass. |
+
+Focused Surefire totals (`target/surefire-reports/`):
+
+| Suite | Passed | Failures | Errors | Skipped |
+|---|---:|---:|---:|---:|
+| `LoginPageUrlTests` | 4 | 0 | 0 | 0 |
+| `TestConfigTests` | 6 | 0 | 0 | 0 |
+| `CredentialTestGuardTests` | 4 | 0 | 0 | 0 |
+| `LoginScenarioAssertionsTests` | 6 | 0 | 0 | 0 |
+| `TestLifecycleTests` | 1 | 0 | 0 | 0 |
+| `BaseTestLifecycleTests` | 7 | 0 | 0 | 0 |
+| **Total** | **28** | **0** | **0** | **0** |
+
+The lifecycle tests emitted one generic warning while exercising deliberate
+synthetic driver-cleanup failure:
+`WebDriver cleanup failed after startup configuration failure.` The warning
+contained no exception message or credential. This is expected test output,
+not a test failure. No performance, duration, repeatability, or flakiness
+conclusion is drawn from these focused runs.
+
+### Environment and browser coverage
+
+Only runtime-variable presence was checked; no values were read or printed.
+`LOGIN_VALID_USERNAME`, `LOGIN_VALID_PASSWORD`, and
+`LOGIN_EXPECTED_WELCOME` were absent. `LOGIN_INVALID_PASSWORD`,
+`LOGIN_UNKNOWN_USERNAME`, `REQUIRE_CREDENTIAL_TESTS`, `BASE_URL`, `BROWSER`,
+`HEADLESS`, and `ALLOW_INSECURE_LOCAL_BASE_URL` were also absent. Missing
+non-secret settings therefore use code defaults, but required credentials and
+the expected identity were not available. No site/network probe was made.
+
+A Chrome executable was present. A `--version` probe returned only
+“Opening in existing browser session.”, so the Chrome version was not
+confirmed. No `chromedriver` command was available. No Selenium browser test
+was invoked. The optional credential-skip path was not triggered because the
+browser suite was not run; **there were no skips in the executed focused
+selection**.
+
+The nine browser cases remain in `LoginPageTests` and compile, but **0/9 were
+executed**:
+
+| Browser test label | Classification | Current evidence |
+|---|---|---|
+| `TS-LOG-001` successful login | Source scenario | Guard, expected welcome/dashboard/logout assertions are present; live outcome unrun. |
+| `TS-LOG-002` incorrect password | Source scenario | Message, unauthenticated/form-retained, and top-of-form assertions are present; live outcome unrun. |
+| `TS-LOG-003` unregistered account | Source scenario | Account-specific error semantics, unauthenticated, and form-retained assertions are present; live outcome unrun. |
+| `REG-NATIVE-BOTH`, `REG-NATIVE-USERNAME`, `REG-NATIVE-PASSWORD` | Supplemental native-validation regressions | Retained with `REG-*` names; not source scenarios and not a fulfillment of former AC 5.1. Browser behavior unrun. |
+| `REG-REMEMBER-RESTART` | Supplemental same-profile restart regression | Retained; restart persistence is not an active source duration/restart guarantee. Browser behavior unrun. |
+| `REG-RECOVERY` | Supplemental AC 1.4 navigation check | Destination, reset form, and unauthenticated assertions are present; live navigation unrun. |
+| `REG-CONTROLS` | Supplemental AC 1.1–1.3 visibility check | Required controls are asserted; live visibility/click interaction unrun. |
+
+Firefox and cross-browser runs were not performed. Headless execution, live
+slow-network behavior, repeated browser runs, browser duration/flakiness,
+actual Remember Me persistence, reset-link navigation, and screenshots were
+not exercised. The full `mvn test` browser suite was not run.
+
+### Requirements, review conditions, plan, and implementation traceability
+
+| Criterion / condition | Source and implementation evidence | Stage 6 disposition |
+|---|---|---|
+| Active source inventory: TS-LOG-001..003; AC 1.1–1.4, 2.1–2.2, 3.1, 4.1 | Requirements artifact, current architecture mapping, and current plan identify these three source scenarios and criteria. | Mapped as the accepted baseline. Current Confluence source revision is not independently verified. |
+| AC 1.1: username/email and password controls | `REG-CONTROLS`; `LoginPage` selectors and visibility checks. | Static/test-source coverage present; browser behavior unrun. |
+| AC 1.2 / FR-5: Remember Me control | `REG-CONTROLS`; `LoginPage` checkbox state/action. | Checkbox presence is mapped; browser check unrun. The restart test remains supplemental only. |
+| AC 1.3: visible/clickable Log in control | `REG-CONTROLS` checks visibility; the three source scenarios submit via the page object's clickable wait/action. | Source/test mapping present; no live click observed. |
+| AC 1.4 / FR-6: Lost your password? navigates to recovery | `REG-RECOVERY` checks recovery URL, recovery form, and unauthenticated state. | Supplemental check maps to AC 1.4, not a source scenario; live navigation unrun. Reset submission/completion is not claimed. |
+| AC 2.1–2.2 / FR-3 / TS-LOG-001 | Valid-login test checks authentication, dashboard destination/content, configured welcome identity, and logout; credential guard requires account values and expected identity. | Assertion code and guard compiled; no live login evidence. |
+| AC 3.1 / FR-4 / TS-LOG-002 | Incorrect-password assertion checks accepted message tokens, unauthenticated state, retained form, and error placement above the form. | Focused assertion tests passed; exact live-site message/layout unverified. |
+| AC 4.1 / FR-4 / TS-LOG-003; review S2 | `TestData` tokens are account-specific unknown/does-not-exist/unregistered phrases. Six assertion tests accept examples and reject generic “not found,” “invalid username,” password/resource errors, authenticated states, and missing form; diagnostics do not echo synthetic account text. | Focused tests passed; semantics are tightened. Actual site wording and outcome remain unverified. |
+| Removed AC 5.1 / TS-LOG-004; review S1 | Requirements and plan record the user-reported removal. Blank-field tests now have `REG-NATIVE-*` labels. | Not an active source criterion under the accepted baseline. Removal is not evidence that former inline-error behavior passed; source update remains independently unverified. |
+| Review S3 / R4-03: driver/profile cleanup and safe diagnostics | Seven `BaseTestLifecycleTests` use driver doubles and temporary directories for setup/configuration failure, shared-profile restart, recursive cleanup, quit/restart/deletion failure, listener/reference clearing, timeout setup, and safe warning behavior. | All 7 passed. No real browser lifecycle was exercised. Profile deletion failure is warned without path/raw exception detail; a warning does not prove a real profile was removed. |
+| Review S4 / R4-01: source outcomes distinct from project regressions | The three source tests retain TS-LOG-001..003; all six other browser tests use `REG-*` labels. Remember Me restart and blank-field checks are explicitly supplemental. | Static label and count check confirms all nine remain. |
+| R4-04: integration/build and handoff | Handoff lists the changed README, plan, `BaseTest`, new lifecycle tests, `TestData`, login tests, and assertion helper/tests. Current compilation and expanded focused run independently passed. | Verified for compile/focused scope; no external-site execution. |
+| Review F1/M1: source provenance | The current plan records user acceptance at 00:39 (+05:30) of the reported deletion as governing baseline despite unavailable Confluence revision. | Accepted limitation carried forward; not independent source evidence. |
+| Review F2/M2 and architecture approval | Current architecture opening records user approval at 00:33 (+05:30); plan records the design review as accepted with conditions. | Current planning metadata is consistent with those records; no new governance discrepancy found. |
+| NFR-1 / N2: performance, security thresholds, and slow network | Requirements specify no measurable thresholds. Bounded waits/settings are present; no network shaping or performance criterion exists in the source. | No performance, security assessment, or slow-network behavior tested or claimed. |
+
+### Framework components and operational safeguards
+
+- **Configuration and credential guard:** Static review plus the six
+  `TestConfigTests` cover non-secret system-property → environment → default
+  precedence, environment-only credential access/status, HTTPS enforcement,
+  explicit local HTTP opt-in, and positive 1–60 second page-load timeout
+  handling with a 10-second fallback. Four credential-guard tests cover
+  required-mode failure and optional-mode abort behavior without exposing
+  supplied test values. These tests do not establish that runtime credentials
+  are currently available.
+- **Driver lifecycle and waits:** `BaseTest` configures a per-test driver,
+  bounded page-load timeout, zero implicit wait, and viewport; the focused
+  driver-double tests exercise cleanup and restart paths. `BasePage` and
+  `LoginPage` use bounded explicit waits and retain page-object ownership of
+  locators/actions. Real browser startup, teardown, waits, and restart were
+  not observed.
+- **Listeners, logs, reports, screenshots:** The one `TestLifecycleTests`
+  passed outcome-classification test is not a live browser/report run. Code
+  inspection found local Extent reporting and failure-only, opt-in screenshot
+  capture; screenshot capture defaults off. `ScreenshotUtil` masks selected
+  form inputs only, which is not whole-page sanitization. No screenshot was
+  produced or reviewed, and no browser-generated Extent report was evaluated.
+  New lifecycle diagnostics are generic and their synthetic tests assert no
+  raw exception/path leakage. Existing logging redacts configured username and
+  password; it is not treated as comprehensive page-data sanitization.
+- **Cleanup/artifacts:** Synthetic cleanup tests passed, including profile
+  deletion warning behavior and listener/driver reference clearing. Actual
+  Chrome process/profile cleanup is unverified. Surefire XML is under
+  `target/surefire-reports/`; no failure screenshots were generated by this
+  focused run.
+- **CI/integration:** No `.github/workflows/` directory was present in the
+  current tree. No CI configuration or CI execution is claimed. No GitHub,
+  external-site, or credentialed operation was performed.
+
+### Limitations, impact, and follow-up
+
+1. **Required live coverage is unrun:** all 9 Chrome cases, including all
+   three active source scenarios, remain unverified because valid login
+   username/password and expected welcome identity were absent; ChromeDriver
+   readiness and target-site access were also not established. Impact: no live
+   acceptance of login, negative outcomes, recovery, controls, or restart
+   behavior. Follow-up: obtain authorized runtime values through environment
+   variables, confirm Chrome/driver and site access, then run the documented
+   required-mode Chrome command. Do not count this as a skip or pass.
+2. **Confluence source revision remains unverified:** the user-accepted
+   baseline governs this report, but the current page/version/date was not
+   independently verified. Impact: possible source drift remains unresolved.
+   Follow-up: independently check the source when authorized; if it differs,
+   return to requirements/architecture rather than claim conformance to
+   another wording.
+3. **Additional runtime evidence is absent:** Firefox/cross-browser,
+   screenshot capture, actual report lifecycle, slow-network, performance,
+   repeated-run/reliability, and real profile cleanup are unrun/unverified.
+   No claim is made for these areas.
+4. **Toolchain discrepancy:** installed Maven 3.8.9 is below README's Maven
+   3.9+ prerequisite, although the two executed Maven commands passed. Follow
+   up by verifying with the documented minimum toolchain if required by the
+   project.
+
+No direct in-scope test/support defect was found in the focused verification;
+no source fix was made. The earlier Stage 5 handoff describes corrected
+intermediate lifecycle-test iterations; the final independent compilation and
+28-test run passed.
+
+**Stage 7 gate:** This is **PASS WITH LIMITATIONS**, not a source-compliant
+PASS. Stage 7 must not proceed until a human explicitly accepts this report's
+limitations. Such acceptance does not turn unrun tests into passes or the
+reported source change into independently verified Confluence evidence.
+
+---
+
 ## Local Stage 5 Follow-up Verification — 2026-11-02
 
 This addendum verifies the local Stage 5 follow-up only: PR-description footer

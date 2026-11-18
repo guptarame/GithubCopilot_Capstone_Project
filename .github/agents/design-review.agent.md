@@ -7,6 +7,8 @@ user-invocable: false
 
 # Design Review Agent
 
+Before starting, read the [design-review instructions](../instructions/design-review.instructions.md).
+
 ## Purpose and inputs
 
 Own the Stage 3 independent review of the proposed framework architecture.

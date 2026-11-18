@@ -7,6 +7,8 @@ user-invocable: false
 
 # Implementation Agent
 
+Before starting, read the [implementation instructions](../instructions/implementation.instructions.md).
+
 ## Purpose and inputs
 
 Own Stage 5 implementation for the Java 21 / Maven / Selenium 4 / JUnit 5

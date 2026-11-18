@@ -184,6 +184,19 @@ class BaseTestLifecycleTests {
     }
 
     @Test
+    void chromeOptionsOmitNoSandboxForHeadedAndHeadlessRuns() {
+        for (boolean headless : new boolean[] {false, true}) {
+            Harness harness = newHarness(new DriverDouble());
+
+            harness.createChromeForTest(headless);
+
+            assertFalse(chromeArguments(harness.lastChromeOptions).contains("--no-sandbox"),
+                    "Chrome must retain its sandbox in headed and headless configurations.");
+            harness.stop();
+        }
+    }
+
+    @Test
     void profileDeletionFailureWarnsWithoutPathOrRawExceptionAndDoesNotMaskCleanup() throws IOException {
         Harness harness = newHarness(new DriverDouble());
         harness.failProfileDeletion = true;
@@ -210,6 +223,18 @@ class BaseTestLifecycleTests {
         }
         Object arguments = capabilities.get("args");
         return arguments == null ? "" : arguments.toString();
+    }
+
+    private static List<String> chromeArguments(ChromeOptions options) {
+        Object chromeOptions = options.getCapability("goog:chromeOptions");
+        if (!(chromeOptions instanceof java.util.Map<?, ?> capabilities)) {
+            return List.of();
+        }
+        Object arguments = capabilities.get("args");
+        if (!(arguments instanceof List<?> values)) {
+            return List.of();
+        }
+        return values.stream().map(String::valueOf).toList();
     }
 
     private Harness newHarness(DriverDouble... drivers) {
@@ -325,6 +350,10 @@ class BaseTestLifecycleTests {
 
         private WebDriver createChromeForTest() {
             return createDriver("chrome", true);
+        }
+
+        private WebDriver createChromeForTest(boolean headless) {
+            return createDriver("chrome", headless);
         }
 
         private Path profile() {

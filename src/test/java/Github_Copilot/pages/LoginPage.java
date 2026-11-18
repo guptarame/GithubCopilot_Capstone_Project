@@ -74,14 +74,22 @@ public class LoginPage extends BasePage {
                 && isVisible(accountNavigation) && isVisible(dashboardContent);
     }
 
+    public boolean isOnLoginPage(String configuredLoginUrl) {
+        return isConfiguredPageUrl(currentUrl(), configuredLoginUrl);
+    }
+
     static boolean isDashboardHomeUrl(String currentUrl, String accountHomeUrl) {
-        if (currentUrl == null || accountHomeUrl == null) {
+        return isConfiguredPageUrl(currentUrl, accountHomeUrl);
+    }
+
+    static boolean isConfiguredPageUrl(String currentUrl, String configuredPageUrl) {
+        if (currentUrl == null || configuredPageUrl == null) {
             return false;
         }
 
         try {
-            URI current = URI.create(currentUrl).normalize();
-            URI expected = URI.create(accountHomeUrl).normalize();
+            URI current = URI.create(currentUrl);
+            URI expected = URI.create(configuredPageUrl);
             return current.getUserInfo() == null && expected.getUserInfo() == null
                     && current.getScheme() != null && expected.getScheme() != null
                     && current.getScheme().equalsIgnoreCase(expected.getScheme())
@@ -104,7 +112,7 @@ public class LoginPage extends BasePage {
     }
 
     private static String normalizedPath(URI uri) {
-        String path = uri.getPath();
+        String path = uri.getRawPath();
         if (path == null || path.isEmpty()) {
             return "/";
         }

@@ -7,6 +7,8 @@ user-invocable: false
 
 # PR Agent
 
+Before starting, read the [PR instructions](../instructions/pr.instructions.md).
+
 ## Purpose and inputs
 
 Own Stage 7: prepare and create the pull request after verification. Follow

@@ -59,6 +59,7 @@ class LoginPageTests extends BaseTest {
 
         LoginScenarioAssertions.assertInvalidPasswordOutcome(
                 message, loginPage.isLoggedIn(), loginPage.isLoginFormVisible(),
+                loginPage.isOnLoginPage(TestConfig.baseUrl()),
                 loginPage.isErrorNoticeAtTopOfLoginForm());
     }
 
@@ -74,7 +75,8 @@ class LoginPageTests extends BaseTest {
                 .getFeedbackMessage();
 
         LoginScenarioAssertions.assertUnknownUserOutcome(
-                message, loginPage.isLoggedIn(), loginPage.isLoginFormVisible());
+                message, loginPage.isLoggedIn(), loginPage.isLoginFormVisible(),
+                loginPage.isOnLoginPage(TestConfig.baseUrl()));
     }
 
     @Test

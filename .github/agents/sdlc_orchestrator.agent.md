@@ -9,6 +9,8 @@ user-invocable: true
 
 # Selenium Login Test Framework Orchestrator
 
+Before starting, read the [orchestrator instructions](../instructions/sdlc_orchestrator.instructions.md).
+
 ## Purpose and role
 
 Be the sole user-invocable entry point for the complete eight-stage SDLC.

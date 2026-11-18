@@ -53,7 +53,8 @@ Report the exact command and observed pass, failure, skip, and unrun counts. A c
 ## Copilot workflow and supporting assets
 
 - For the complete eight-stage requirements-to-review process, use the [SDLC orchestrator](agents/sdlc_orchestrator.agent.md) and respect its architecture, design-review, and review-publication approval gates. Use a specialist agent for a bounded stage or task.
-- Active agent definitions are in [`agents/`](agents/). Stage prompts are in [`prompts/`](prompts/), implementation/planning rules in [`rules/`](rules/), and verification/code-review procedures in [`skills/`](skills/).
+- Active agent definitions are in [`agents/`](agents/). Their individual instructions are stored in the separate [`instructions/`](instructions/) folder; read the matching file before invoking or editing an agent.
+- Stage prompts are in [`prompts/`](prompts/), implementation/planning rules in [`rules/`](rules/), and verification/code-review procedures in [`skills/`](skills/).
 - The [Stage 5 handoff](subagents/implementation-stage.md) defines implementation inputs and outputs. SDLC artifacts belong in [`docs/sdlc/`](../docs/sdlc/).
 - There is currently no `.github/workflows/` directory or GitHub Actions workflow. The [pre-commit document](hooks/pre-commit.md) is a proposed specification, not an installed hook.
 - The requirements stage reads the user-supplied PRD through the [workspace Confluence MCP configuration](../.vscode/mcp.json). Never assume a fixed PRD; provide credentials only through its secure prompts and never commit token values.

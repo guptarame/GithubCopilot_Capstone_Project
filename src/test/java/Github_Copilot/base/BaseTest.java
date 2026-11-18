@@ -153,7 +153,7 @@ public abstract class BaseTest {
                 if (userDataDir != null) {
                     options.addArguments("--user-data-dir=" + userDataDir.toAbsolutePath());
                 }
-                options.addArguments("--disable-gpu", "--no-sandbox", "--window-size=1920,1080");
+                options.addArguments("--disable-gpu", "--window-size=1920,1080");
                 webDriver = newChromeDriver(options);
                 configureAndReturn(webDriver, headless);
                 yield webDriver;

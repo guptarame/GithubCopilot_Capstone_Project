@@ -1,5 +1,174 @@
 ﻿# Stage 6 Verification Report
 
+## Current Stage 6 verification — 2026-11-18
+
+### Metadata, scope, and verdict
+
+| Item | Current verification |
+|---|---|
+| Baseline | Current requirements, architecture, design review, and implementation plan dated 2026-11-18. |
+| Scope | PLN-07 verification of the Stage 5 implementation, framework-focused test evidence, and conditionally available Chrome scenarios. No source or test code was changed. |
+| Environment | Windows. This verification interface exposed repository read/edit tools but no command-execution facility; Java/Maven versions and browser/site readiness could not be probed. Credentials and runtime environment values were not inspected. |
+| Verdict | **PASS WITH LIMITATIONS** — Stage 5 focused-test evidence is positive, but no Maven command or browser scenario was independently executed during this Stage 6 session. Multiple source and runtime criteria remain unverified. |
+
+This verdict is not a claim that all required tests passed. On 2026-11-18
+at 22:34 (+05:30), the user explicitly accepted the current verification
+limitations and approved proceeding to Stage 7. That acceptance does not
+authorize a commit, push, merge, or publication of review findings. M1 and M2
+remain unresolved, and no source-compliance claim is made.
+
+### Commands and observed results
+
+| Exact command | Current Stage 6 result |
+|---|---|
+| `mvn -q -DskipTests compile test-compile` | **UNRUN.** No command-execution facility was available in this verification session. |
+| `mvn -q -Dtest=TestConfigTests,CredentialTestGuardTests,LoginScenarioAssertionsTests,TestLifecycleTests test` | **UNRUN.** No command-execution facility was available in this verification session. |
+| Chrome browser suite / scenario-specific Maven command | **UNRUN.** Browser/driver availability, authorized site access, and required runtime settings were not established. No browser was launched. |
+
+The following is prior Stage 5 evidence, not a new Stage 6 run. The user
+reported running this command in local PowerShell on 2026-11-18 and reported
+`$LASTEXITCODE` as `0`:
+
+```text
+mvn -q "-Dtest=TestConfigTests,CredentialTestGuardTests,LoginScenarioAssertionsTests,TestLifecycleTests,BaseTestLifecycleTests,LoginPageUrlTests" test
+```
+
+The six corresponding `target/surefire-reports/*.txt` summaries were read for
+this report. They total **30 tests, 0 failures, 0 errors, 0 skipped**:
+
+| Suite | Tests | Failures | Errors | Skipped |
+|---|---:|---:|---:|---:|
+| `TestConfigTests` | 6 | 0 | 0 | 0 |
+| `CredentialTestGuardTests` | 4 | 0 | 0 | 0 |
+| `LoginScenarioAssertionsTests` | 6 | 0 | 0 | 0 |
+| `TestLifecycleTests` | 1 | 0 | 0 | 0 |
+| `BaseTestLifecycleTests` | 8 | 0 | 0 | 0 |
+| `LoginPageUrlTests` | 5 | 0 | 0 | 0 |
+| **Total** | **30** | **0** | **0** | **0** |
+
+The Stage 5 `test` lifecycle normally includes compilation and test
+compilation, but no separate Stage 5 compile-only command was evidenced.
+Therefore the requested Stage 6 compile command remains unverified. The
+Stage 5 run selected no browser test class; its results are not live-site
+evidence. The Stage 5 handoff reports one generic startup cleanup warning;
+the warning is not a test failure, and no secret values were accessed for this
+verification.
+
+An additional `LoginPageTests.txt` file is present under Surefire reports and
+lists nine tests, but it is not part of the six summaries associated with the
+reported Stage 5 command; its run provenance/date cannot be established here.
+It is excluded from current scenario evidence and is not counted as a pass.
+No tests were executed in this Stage 6 session; thus there are no Stage 6
+pass/fail/skip totals. The 30 Stage 5 results above are reported separately.
+
+### Requirements, plan, and review-condition traceability
+
+| Criterion / condition | Source and implementation mapping | Verification disposition |
+|---|---|---|
+| FR-1 — username/email `id=username`, password `id=password`, Remember Me, Log in `name=login` | `LoginPage` selectors and `REG-CONTROLS`; the scenario asserts required control visibility. | Static mapping present; `REG-CONTROLS` browser behavior **UNRUN**. Exact live DOM identifiers/visibility remain unverified. |
+| FR-2 — “Lost your password?” link leads to reset flow | `LoginPage.clickLostPassword`, recovery URL/form assertions in `REG-RECOVERY`. | **UNRUN and acceptance boundary unresolved.** PLN-05 was deferred pending product approval of the observable reset-flow boundary. Existing route/form assumptions do not establish FR-2 conformance or reset completion. |
+| FR-3 / TS-LOG-001 — source-specified fixed credentials, dashboard, welcome | `LoginPageTests` plus `LoginScenarioAssertions`; values are runtime-environment-only. | Browser scenario **UNRUN**. M1 fixed-credential/policy conflict remains open, no approved deviation exists, and runtime identity was not qualified. No source-compliance claim. |
+| FR-4 / TS-LOG-002 — valid account, incorrect password, stay on login page, notice above form | Negative assertion checks semantic error, unauthenticated state, retained form, configured login-page URL identity, and top-of-form geometry. `LoginPageUrlTests` and `LoginScenarioAssertionsTests` cover helper behavior. | Focused Stage 5 tests passed as reported above; live outcome and site wording/layout **UNRUN**. An authorized known-account runtime identity was not established. |
+| FR-5 / TS-LOG-003 — unregistered identifier, stay on login page, account-not-found error | Negative assertion checks account-specific error tokens, unauthenticated state, retained form, and login-page URL identity. | Focused Stage 5 assertion tests passed; live outcome **UNRUN**. M2 registered-account-precondition conflict and actual unregistered status of test data remain unresolved; no source-compliance claim. |
+| NFRs | Requirements specify no measurable performance, reliability, accessibility, usability, or security threshold. Framework contains bounded waits and HTTPS/local-HTTP policy. | No NFR target can be inferred. No performance, security, accessibility, slow-network, or reliability exercise was run. |
+| PLN-03 / DR-5 — remove default Chrome `--no-sandbox` | `BaseTest` Chrome options; `BaseTestLifecycleTests` checks headed/headless arguments. | Implemented per handoff and confirmed by source inspection. Eight lifecycle tests passed in the reported Stage 5 run. No real Chrome launch or Firefox change/run was verified. |
+| PLN-04 / DR-3 — negative login page identity | `LoginPage.isOnLoginPage`, URL normalization helper, negative assertions, URL and scenario assertion unit tests. | Implemented per handoff and confirmed by source inspection. Five URL tests and six assertion tests passed in Stage 5. Live route behavior remains unverified. |
+| PLN-05 / DR-4 — reset-flow acceptance and synchronization | Recovery route/form checks remain in `LoginPage`; product acceptance is a prerequisite in the plan. | **Deferred**; no decision or live navigation evidence. |
+| DR-6 — architecture approval metadata | Current plan records the user-approved fresh architecture as authoritative for planning despite its stale status line. | Carried as plan authority only; no new governance decision or architecture edit was made in Stage 6. |
+| N1 — reports/screenshots and data exposure | README/repository policy require local controlled artifacts; screenshot capture defaults off; screenshot helper masks selected fields only. | Static review only. No Stage 6 browser report/screenshot was generated or reviewed. Field masking is not whole-page sanitization. |
+| N2 — slow-network sensitivity | Explicit waits are bounded (10-second defaults); no measurable NFR or network-shaping setup exists. | Slow-network behavior **UNRUN**; no tuning or performance claim. |
+| Source provenance | Requirements are based on PRD text supplied in conversation; Confluence was not independently retrieved. | Unverified and qualified as such. |
+
+The design review marked M1 and M2 as blocking source/product decisions, and the
+human accepted carrying them open into planning only. That planning acceptance
+does not resolve either conflict, authorize a deviation, or establish that a
+scenario passed.
+
+### Framework component assessment
+
+| Component | Evidence and result |
+|---|---|
+| Configuration and URL policy | `TestConfigTests` passed 6/6 in Stage 5. Tests cover non-secret system-property → environment → default precedence, credential presence/status logic, HTTPS enforcement, local HTTP opt-in, and positive 1–60 second timeout bounds with a 10-second fallback. Credential values themselves were not read. |
+| Credential-required guard | `CredentialTestGuardTests` passed 4/4 in Stage 5, covering required failure and optional abort behavior for missing inputs. No credential-dependent browser test was launched; this is not evidence that current runtime inputs exist. |
+| Driver lifecycle and Chrome options | `BaseTestLifecycleTests` passed 8/8 in Stage 5 using driver doubles and temporary profile directories. They cover configuration/startup cleanup, teardown/restart cleanup, listener clearing, profile deletion warning, timeout/implicit-wait setup, same-profile restart, and omission of `--no-sandbox`. Real driver startup, teardown, and filesystem behavior under a browser remain unverified. |
+| Waits and page objects | Source inspection shows bounded explicit waits and locators/actions in `LoginPage` with shared browser operations in `BasePage`; no fixed sleep was observed in the inspected classes. Real wait behavior and site selectors remain unverified. |
+| Remember Me | Temporary Chrome profile creation/reuse/cleanup is represented in code and simulated lifecycle tests. The `REG-REMEMBER-RESTART` live persistence scenario was **UNRUN**; no persistence-duration guarantee is inferred. |
+| Reset-link navigation | Route and form checks are present but PLN-05 is deferred. `REG-RECOVERY` was **UNRUN**; route assumptions are not source acceptance evidence. |
+| Listeners, logs, and reports | `TestLifecycleTests` passed 1/1 outcome-classification test in Stage 5. Source inspection shows local Extent reporting and generic diagnostic messages. No current Extent report was generated/reviewed in Stage 6; no live pass/fail/skip listener path was exercised. |
+| Screenshots | Screenshot capture is opt-in and defaults off. The helper masks selected user/email/password fields, not all page content. No screenshot was taken, generated, or reviewed in this Stage 6 session. |
+| Cleanup | Synthetic lifecycle/profile cleanup tests passed as above. Actual Chrome process/profile cleanup is unverified. |
+| Maven/Surefire and CI | `pom.xml` selects `**/*Tests.java`. The current repository listing contains no `.github/workflows/` directory or configured CI workflow. No CI run, secret injection, or artifact-upload behavior is claimed. |
+
+### Browser and scenario coverage
+
+No Chrome browser scenario was executed. Site and account readiness, browser
+and driver availability, and authorized runtime inputs were not established;
+no credentials or environment-variable values were checked. Each scenario is
+therefore **UNRUN**, not passed or skipped:
+
+| Scenario | Classification | Result |
+|---|---|---|
+| `TS-LOG-001` valid login, dashboard, welcome | Source | **UNRUN**; additionally blocked from a source-conformance claim by open M1. |
+| `TS-LOG-002` incorrect password | Source | **UNRUN**; known-account runtime setup and live route/message behavior unverified. |
+| `TS-LOG-003` unregistered account | Source | **UNRUN**; M2 unresolved and test identifier not qualified as unregistered. |
+| `REG-NATIVE-BOTH` blank username and password | Supplemental | **UNRUN**; browser/site readiness not established. Does not fulfill any different source requirement. |
+| `REG-NATIVE-USERNAME` blank username | Supplemental | **UNRUN**; browser/site readiness not established. |
+| `REG-NATIVE-PASSWORD` blank password | Supplemental | **UNRUN**; browser/site readiness not established. |
+| `REG-REMEMBER-RESTART` Remember Me/profile restart | Supplemental | **UNRUN**; browser/site readiness not established. |
+| `REG-RECOVERY` reset-link navigation | Supplemental | **UNRUN**; browser/site readiness not established and PLN-05 acceptance is deferred. |
+| `REG-CONTROLS` required controls | Supplemental | **UNRUN**; browser/site readiness not established. |
+
+The six supplemental cases are not substitutes for TS-LOG-001..003. No
+Firefox or cross-browser test was run. Headless behavior, repeated runs,
+duration/flakiness, slow-network response, live cleanup, and screenshot
+handling were not exercised. No performance or repeatability metric is
+reported.
+
+### Limitations, impact, and follow-up
+
+1. **Stage 6 execution was unavailable.** The compile/test-compile command and
+   prescribed focused Maven command are unrun because this verification
+   session had no command-execution facility. Impact: no fresh Stage 6 build
+   result. Follow-up: run both exact commands in an authorized Java/Maven
+   environment and append exact versions/results and Surefire counts.
+2. **All nine Chrome scenarios are unrun.** Site, browser/driver, authorized
+   account setup, and runtime configuration were not established. Impact: no
+   live acceptance of any source scenario or supplemental browser behavior.
+   Follow-up: after relevant decision gates and authorized environment setup,
+   run only Chrome scenarios and record each result; do not treat these
+   unruns as skips or passes.
+3. **M1 remains open.** FR-3's fixed-credential criterion conflicts with
+   environment-only policy. Impact: TS-LOG-001 source compliance cannot be
+   claimed even if a safe environment-backed test later runs. Follow-up:
+   authorized product/policy decision without inspecting or disclosing
+   credential values.
+4. **M2 remains open.** The registered-account precondition conflicts with
+   TS-LOG-003. Impact: scenario setup/source conformance is ambiguous.
+   Follow-up: authorized requirements decision and safe qualification of test
+   data before making a conformance claim.
+5. **FR-2 remains unverified.** PLN-05 deferred recovery-flow changes pending
+   product acceptance. Impact: current route/form assumptions do not prove
+   the source's reset-flow criterion. Follow-up: establish the accepted
+   observable boundary, then verify the supplemental navigation case.
+6. **PRD provenance remains limited.** Confluence was not independently
+   verified. Impact: possible source drift is unknown. Follow-up: independently
+   verify the current source revision when authorized.
+7. **Browser support/operational evidence remains unavailable.** Firefox,
+   cross-browser, headless, slow-network, repeatability, screenshots, and real
+   profile cleanup are unrun. Follow-up: test only when specifically required
+   and runtime conditions are approved; do not infer performance or reliability.
+
+**Stage 7 gate:** This report does not authorize Stage 7. The human must
+explicitly accept the limitations before the orchestrator may proceed.
+
+---
+
+## Historical Stage 6 records — preserved
+
+The sections below this heading are historical records from 2026-11-03. Their
+approvals, test results, runtime limitations, and authorizations are not
+current evidence for the 2026-11-18 baseline. Their original text is retained.
+
 ## Current Stage 6 R4 acceptance and publication addendum — 2026-11-03 00:57 (+05:30)
 
 The user accepted the **PASS WITH LIMITATIONS** verdict, including that all

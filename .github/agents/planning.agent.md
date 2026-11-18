@@ -7,6 +7,8 @@ user-invocable: true
 
 # Planning Agent
 
+Before starting, read the [planning instructions](../instructions/planning.instructions.md).
+
 ## Purpose and inputs
 
 Create or revise the Stage 4 implementation plan for the Selenium login

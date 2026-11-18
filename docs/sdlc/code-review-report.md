@@ -1,3 +1,69 @@
+## Stage 8 Code Review — PR #7 (2026-11-15)
+
+### Review metadata and verdict
+
+| Item | Evidence |
+|---|---|
+| Repository / PR | [guptarame/GithubCopilot_Capstone_Project#7](https://github.com/guptarame/GithubCopilot_Capstone_Project/pull/7) |
+| State / base / head | **MERGED**; `master` / `feature/selenium-login-automation`; head `12c9f5dac350c4b48dbf3188652ff4743606dab9`. These values and the 14-path list were supplied from the user's `gh pr view` output; they were not independently queried. |
+| Review basis | Supplied PR diff (which began partway through the `code-review-report.md` patch), user-supplied branch-status output, and current workspace files. The reported branch tracking status had no ahead/behind marker; the local commit SHA was not independently obtained. |
+| Verdict | **APPROVED WITH MINOR ISSUES**, scoped to the supplied PR evidence and current workspace content. One low-severity cleanup error-handling issue is identified below. This is a local review result, not a GitHub review or merge decision. |
+| Publication | The user approved and published one inline comment at [discussion_r4575335149](https://github.com/guptarame/GithubCopilot_Capstone_Project/pull/7#discussion_r4575335149), comment ID `4575335149`, on 2026-11-15 01:01:53 (+05:30) (`2026-11-14T19:31:53Z`). It targets `BaseTest.java:107` at head `12c9f5dac350c4b48dbf3188652ff4743606dab9`. No formal review, approval, or merge action was performed. |
+
+### Scope and files reviewed
+
+The supplied PR metadata lists these 14 changed paths:
+
+- `README.md`
+- `docs/sdlc/architecture.md`
+- `docs/sdlc/code-review-report.md`
+- `docs/sdlc/design-review.md`
+- `docs/sdlc/impl-plan.md`
+- `docs/sdlc/pr-description.md`
+- `docs/sdlc/requirements.md`
+- `docs/sdlc/verification-report.md`
+- `src/test/java/Github_Copilot/base/BaseTest.java`
+- `src/test/java/Github_Copilot/base/BaseTestLifecycleTests.java`
+- `src/test/java/Github_Copilot/data/TestData.java`
+- `src/test/java/Github_Copilot/tests/LoginPageTests.java`
+- `src/test/java/Github_Copilot/tests/LoginScenarioAssertions.java`
+- `src/test/java/Github_Copilot/tests/LoginScenarioAssertionsTests.java`
+
+All listed paths were inspected in the current workspace. The Java files and README/requirements/PR-description were read directly; larger SDLC files were reviewed in their current sections and the relevant historical context, not line-by-line across every archived snapshot. Supporting files read included `pom.xml`, canonical/repository guidance, the code-review instructions/prompt/skill, orchestrator, and relevant requirements, architecture, design, plan, verification, and prior review records.
+
+### Summary and evidence
+
+- The current source code distinguishes the three source scenarios from six supplemental regressions. `LoginScenarioAssertions` narrows unknown-account feedback to account-specific language, checks unauthenticated/retained-form state, and uses generic assertion diagnostics. The synthetic assertion tests cover acceptance/rejection and avoid echoing synthetic account data.
+- `BaseTest` handles partially configured drivers, per-test teardown, profile-preserving restart, and best-effort profile deletion; the lifecycle tests exercise those paths with driver doubles and temporary directories. The current implementation also suppresses `Throwable` during profile deletion, creating the finding below.
+- The artifacts consistently describe AC 5.1 / TS-LOG-004 as removed only per user report and independently unverified; native validation remains supplemental and is not claimed to satisfy the former inline-error criterion. They also report **0/9 browser scenarios run**, no configured CI, and no Firefox/cross-browser execution.
+- The Stage 6 report records compilation and **28 focused tests passed, 0 failures, 0 errors, 0 skips**. Those are reported historical results, not tests rerun for this review. Maven, browsers, and the target site were not run here.
+- The PR description's earlier “OPEN” status is explicitly a publication-time snapshot; the user-supplied current CLI metadata reports **MERGED**. It is not treated as a current-state contradiction.
+
+### Confirmed finding and published inline comment
+
+#### LOW — Fatal errors can be swallowed during profile cleanup
+
+**Location:** `src/test/java/Github_Copilot/base/BaseTest.java:106-109`  
+**Confidence:** 9/10
+
+Both profile-entry deletion and the enclosing `Files.walk` operation catch `Throwable` and convert it into a warning path. That includes fatal `Error` types such as `ThreadDeath`, `LinkageError`, and `VirtualMachineError`, not just expected filesystem/runtime cleanup failures. If one occurs during teardown, it can be suppressed and the test process may continue/report an otherwise successful test, obscuring a fatal execution condition. The focused lifecycle test covers a synthetic `IOException`, not fatal errors.
+
+**Recommendation:** Catch expected cleanup exceptions (`IOException` and any specifically justified runtime exceptions) while allowing fatal `Error` conditions to propagate. Preserve non-masking behavior for ordinary cleanup failures.
+
+**Published inline comment:** [discussion_r4575335149](https://github.com/guptarame/GithubCopilot_Capstone_Project/pull/7#discussion_r4575335149): “Could these cleanup handlers catch expected filesystem/runtime exceptions rather than `Throwable`? As written they also suppress fatal errors such as `ThreadDeath` or `VirtualMachineError`, which can let teardown continue and hide a process-level failure. Please keep ordinary cleanup best-effort while allowing fatal errors to propagate.”
+
+No other confirmed actionable defect was identified in the accessible scope. No additional inline comments are proposed.
+
+### Limitations and handoff
+
+- The copied diff did not include its beginning, so this review cannot independently certify every diff hunk. The reported local branch status and the current workspace files suggest alignment, but the exact local SHA was not independently checked. The verdict is therefore qualified to the supplied metadata and checked-in content.
+- PR state, head SHA, and changed-path list are user-supplied CLI evidence, not an independent GitHub query. No existing PR discussion was independently fetched.
+- No Maven command, browser, live-site request, CI job, dependency/security scan, or screenshot test was run. The 28-test result is attributed only to the checked-in verification report.
+- Confluence's reported source change remains independently unverified. Actual login behavior, real browser/profile cleanup, screenshot safety in a live page, Firefox, and CI remain unverified/unrun.
+- This section is additive; prior review history below is retained. Only this report was edited. User-provided unrelated dirty paths were not touched.
+
+---
+
 ## Current Publication Scope Note — 2026-11-03
 
 The PR #7 local **APPROVED** verdict recorded below covers only the original

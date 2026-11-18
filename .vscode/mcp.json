@@ -17,7 +17,8 @@
       "env": {
         "CONFLUENCE_URL": "https://epam-team-en32bjvm.atlassian.net/wiki",
         "CONFLUENCE_USERNAME": "${input:confluenceUsername}",
-        "CONFLUENCE_API_TOKEN": "${input:confluenceApiToken}"
+        "CONFLUENCE_API_TOKEN": "${input:confluenceApiToken}",
+        "NODE_TLS_REJECT_UNAUTHORIZED": "0"
       }
     }
   },

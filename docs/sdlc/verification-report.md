@@ -158,8 +158,10 @@ reported.
    profile cleanup are unrun. Follow-up: test only when specifically required
    and runtime conditions are approved; do not infer performance or reliability.
 
-**Stage 7 gate:** This report does not authorize Stage 7. The human must
-explicitly accept the limitations before the orchestrator may proceed.
+**Stage 7 gate: satisfied.** The user explicitly accepted the reported
+limitations and approved proceeding to Stage 7 on 2026-11-18 at 22:34
+(+05:30). This did not change the unrun results or authorize a commit, push,
+merge, or publication of review findings.
 
 ---
 

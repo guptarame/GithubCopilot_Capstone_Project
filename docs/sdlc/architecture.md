@@ -1,7 +1,7 @@
 # Stage 2 Architecture Proposal — Customer Login Automation
 
 **Proposal date:** 2026-11-18  
-**Status:** Fresh proposal; **human approval pending**. This document does not authorize Stage 3 or implementation.
+**Status:** **Approved by the user on 2026-11-18** for Stage 3 design review. This approval did not resolve the open product decisions or authorize implementation by itself. See the [design review](design-review.md) and [implementation plan](impl-plan.md) for subsequent decisions.
 
 > **Historical decision boundary:** The previous version recorded an architecture proposal and approval dated 2026-11-03 for a different requirements baseline. That approval is historical and does not approve this proposal or its newly supplied PRD baseline. No prior implementation, review, or verification status is carried forward as evidence for this proposal.
 
@@ -117,7 +117,7 @@ Run browser tests only when internet/site access, a usable local browser/driver,
 
 ## 7. Implementation success criteria and handoff
 
-Architecture is ready for human review when the following conditions are understood; implementation and source compliance remain pending:
+The approved architecture establishes the following implementation and verification criteria. The [implementation plan](impl-plan.md) and [verification report](verification-report.md) record execution evidence separately:
 
 1. Preserve the established component boundaries and map FR-1..FR-5 to the page objects, configuration, tests, and assertions above.
 2. Keep the three source scenarios distinct from supplementary regression tests and reports; do not add inferred source criteria.
@@ -126,4 +126,4 @@ Architecture is ready for human review when the following conditions are underst
 5. Record the fixed-credential conflict and the registered-account/TS-LOG-003 ambiguity as unresolved, obtain human decisions before claiming conformance, and do not treat framework readiness as execution evidence.
 6. Describe CI only if a workflow is later configured and inspected. Report actual executed checks and browser results separately from architecture/configuration.
 
-**Requested decisions before proceeding:** resolve the credential-policy conflict without disclosing the PRD values; clarify the account precondition for TS-LOG-003; and confirm whether the unspecified reset destination, message semantics, and supported browsers need product-level criteria. Until explicit human architecture approval, Stage 3 is not authorized.
+**Open product decisions:** resolve the credential-policy conflict without disclosing the PRD values; clarify the account precondition for TS-LOG-003; and confirm whether the unspecified reset destination, message semantics, and supported browsers need product-level criteria. The architecture approval and later acceptance of the limitations did not resolve these decisions or establish source conformance.

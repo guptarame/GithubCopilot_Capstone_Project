@@ -1,3 +1,73 @@
+# Local PR description — #8
+
+**Status:** Associated with [PR #8](https://github.com/guptarame/GithubCopilot_Capstone_Project/pull/8),
+reported open in the GitHub metadata supplied on 2026-11-18 at 23:06
+(+05:30). This is a local description; the live PR body was not independently
+verified. The [code review report](code-review-report.md) records the supplied
+patch and the findings for the reviewed head below.
+
+**Title:** [Feature] Harden login test framework outcomes and Chrome setup  
+**Base:** `master`  
+**Head:** `feature/selenium-login-automation`  
+**Reviewed head commit (reported):** `b62e25c4672f05aacaba9a6cf44894099e3bb8d1`
+
+## Summary and scope
+
+The PR updates the framework for automated tests of the external login site,
+along with repository guidance, SDLC documentation, and workspace
+configuration. It does not change the site or its authentication service.
+The Stage 5/6 handoffs report framework changes to verify that
+incorrect-password and unknown-account outcomes remain on the configured login
+page, and to remove Chrome's default `--no-sandbox` option. The reset-flow
+change was deferred pending product acceptance.
+
+The intent maps to FR-4/FR-5 and PLN-03/PLN-04. M1 and M2 remain unresolved;
+this work does not claim source conformance for TS-LOG-001 or TS-LOG-003.
+Requirements were derived from PRD text supplied in conversation; Confluence
+was not independently verified.
+
+## Verification evidence
+
+The current [Stage 6 verification report](verification-report.md) records
+**PASS WITH LIMITATIONS**, explicitly accepted for Stage 7 on 2026-11-18 at
+22:34 (+05:30). It reports the following Stage 5, user-run focused command:
+
+```text
+mvn -q "-Dtest=TestConfigTests,CredentialTestGuardTests,LoginScenarioAssertionsTests,TestLifecycleTests,BaseTestLifecycleTests,LoginPageUrlTests" test
+```
+
+The report records six corresponding Surefire summaries read for verification:
+**30 tests, 0 failures, 0 errors, 0 skipped**. Stage 6 itself did not execute
+Maven; the compile/test-compile command was unrun.
+
+## Limitations
+
+- All **nine Chrome scenarios are unrun**; no live-site behavior is claimed.
+- M1 (fixed-credential policy conflict) and M2 (registered-account
+  precondition conflict) remain unresolved. FR-2 acceptance is deferred.
+- CI is not configured. Firefox/cross-browser coverage is unrun.
+- Confluence provenance was not independently verified.
+- The Stage 8 reviewer used the supplied patch, not a live GitHub diff. An
+  intermediate commit disabled TLS verification for the MCP process; the
+  reviewed head removes that setting. Keep TLS verification enabled.
+
+## Reviewer checklist
+
+- [ ] Confirm the live PR diff matches the stated framework, documentation, and
+      workspace configuration scope, with no external login-site or
+      authentication-service changes.
+- [ ] Verify negative-login assertions check login-page identity as well as
+      their intended error and unauthenticated/form state.
+- [ ] Verify Chrome defaults omit `--no-sandbox` and existing Firefox support
+      is unchanged.
+- [ ] Keep the reported 30 focused tests distinct from the unrun Stage 6 Maven
+      checks and nine unrun Chrome scenarios.
+- [ ] Preserve the M1, M2, FR-2, Confluence, CI, and Firefox limitations.
+
+---
+
+# Previous PR #7 description — historical, not applicable to the new commit
+
 # R4 Framework Update and SDLC Reconciliation
 
 **Title:** [Feature] R4 login-framework update and SDLC reconciliation

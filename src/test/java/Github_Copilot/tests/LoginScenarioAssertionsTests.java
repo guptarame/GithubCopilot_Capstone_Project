@@ -13,48 +13,57 @@ class LoginScenarioAssertionsTests {
     @Test
     void invalidPasswordAssertionRejectsMissingOrInsufficientEvidence() {
         assertDoesNotThrow(() -> LoginScenarioAssertions.assertInvalidPasswordOutcome(
-                "Incorrect password", false, true, true));
+                "Incorrect password", false, true, true, true));
         assertDoesNotThrow(() -> LoginScenarioAssertions.assertInvalidPasswordOutcome(
-                "Error: The password you entered for the username [account] is incorrect", false, true, true));
+                "Error: The password you entered for the username [account] is incorrect",
+                false, true, true, true));
         assertThrows(AssertionFailedError.class, () -> LoginScenarioAssertions.assertInvalidPasswordOutcome(
-                "", false, true, true));
+                "", false, true, true, true));
         assertThrows(MultipleFailuresError.class, () -> LoginScenarioAssertions.assertInvalidPasswordOutcome(
-                "Incorrect password", true, true, true));
+                "Incorrect password", true, true, true, true));
         assertThrows(MultipleFailuresError.class, () -> LoginScenarioAssertions.assertInvalidPasswordOutcome(
-                "Incorrect password", false, false, true));
+                "Incorrect password", false, false, true, true));
         assertThrows(MultipleFailuresError.class, () -> LoginScenarioAssertions.assertInvalidPasswordOutcome(
-                "Incorrect password", false, true, false));
+                "Incorrect password", false, true, false, true));
+        assertThrows(MultipleFailuresError.class, () -> LoginScenarioAssertions.assertInvalidPasswordOutcome(
+                "Incorrect password", false, true, true, false));
     }
 
     @Test
     void unknownUserAssertionAcceptsOnlyAccountSpecificUnregisteredSemantics() {
         assertDoesNotThrow(() -> LoginScenarioAssertions.assertUnknownUserOutcome(
-                "Unknown username.", false, true));
+                "Unknown username.", false, true, true));
         assertDoesNotThrow(() -> LoginScenarioAssertions.assertUnknownUserOutcome(
-                "This account does not exist.", false, true));
+                "This account does not exist.", false, true, true));
         assertDoesNotThrow(() -> LoginScenarioAssertions.assertUnknownUserOutcome(
-                "Email is not registered.", false, true));
+                "Email is not registered.", false, true, true));
 
         for (String unrelatedMessage : new String[] {
                 "", "Not found.", "Invalid username.", "Incorrect password.",
                 "The requested resource was not found.", "The service is temporarily unavailable."
         }) {
             assertThrows(AssertionFailedError.class,
-                    () -> LoginScenarioAssertions.assertUnknownUserOutcome(unrelatedMessage, false, true));
+                    () -> LoginScenarioAssertions.assertUnknownUserOutcome(unrelatedMessage, false, true, true));
         }
     }
 
     @Test
     void unknownUserAssertionRequiresUnauthenticatedStateAndRetainedFormWithoutEchoingFeedback() {
         assertThrows(MultipleFailuresError.class,
-                () -> LoginScenarioAssertions.assertUnknownUserOutcome("Account does not exist.", true, true));
+                () -> LoginScenarioAssertions.assertUnknownUserOutcome(
+                        "Account does not exist.", true, true, true));
         assertThrows(MultipleFailuresError.class,
-                () -> LoginScenarioAssertions.assertUnknownUserOutcome("Account does not exist.", false, false));
+                () -> LoginScenarioAssertions.assertUnknownUserOutcome(
+                        "Account does not exist.", false, false, true));
+        assertThrows(MultipleFailuresError.class,
+                () -> LoginScenarioAssertions.assertUnknownUserOutcome(
+                        "Account does not exist.", false, true, false));
 
         String sensitiveSyntheticFeedback =
                 "Account customer.private@example.invalid does not exist.";
         AssertionFailedError failure = assertThrows(AssertionFailedError.class,
-                () -> LoginScenarioAssertions.assertUnknownUserOutcome(sensitiveSyntheticFeedback, false, true));
+                () -> LoginScenarioAssertions.assertUnknownUserOutcome(
+                        sensitiveSyntheticFeedback, false, true, true));
         assertFalse(failure.getMessage().contains("customer.private@example.invalid"));
         assertFalse(failure.getMessage().contains(sensitiveSyntheticFeedback));
     }

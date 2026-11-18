@@ -1,3 +1,185 @@
+### Current Stage 3 Independent Design Review — 2026-11-18
+
+> **Current review boundary:** This section reviews the fresh requirements and
+> architecture dated 2026-11-18 only. The entire 2026-11-03 review and its
+> findings, verdict, and stage history remain below as an unchanged historical
+> archive; they are not current evidence or decisions for this review.
+
+### Metadata and summary
+
+| Item | Current review |
+|---|---|
+| Stage | 3 — independent review of the approved framework architecture |
+| Architecture approval | The user explicitly approved the fresh proposal as written; that approval authorizes this review only, not implementation or Stage 4. The proposal's own status line still says approval is pending; see DR-6. |
+| Requirements baseline | `docs/sdlc/requirements.md`, analysis dated 2026-11-18; based on PRD text supplied in conversation. The Confluence page/version was not independently retrieved or verified. |
+| Scope | Java/Maven Selenium test-automation design and relevant current framework/test code. The external login application is out of scope. |
+| Evidence method | Static review of requirements, architecture, root and repository guidance, orchestrator/instructions, `pom.xml`, README, relevant `src/test/java/Github_Copilot` classes, and repository directories. `src/test/resources` and `.github/workflows` are absent. |
+| Verdict | **APPROVED WITH CONDITIONS** |
+| Counts | **0 critical issues; 6 findings/warnings** (2 unresolved source/product blockers, 3 design/implementation findings, 1 approval-metadata inconsistency); 2 Must fix, 4 Should fix, 2 Nice to have recommendations. |
+
+The proposed local, sequential framework design is generally suitable: the
+page-object/configuration/lifecycle boundaries align with current code; three
+source scenarios are distinct from supplementary regressions; waits are
+bounded; and the design appropriately treats secrets, screenshots and
+generated reports as sensitive. The review does not certify external-site
+behavior or test execution.
+
+Planning and any source-compliance claim are blocked by the unresolved conflict
+between the fixed-credential requirement in FR-3 and the repository's
+environment-only credential policy, and by the registered-account precondition
+conflicting with TS-LOG-003's unregistered account. The human/product owner
+must resolve or explicitly accept each decision before planning. Approval of
+the architecture does not resolve these requirements conflicts or approve a
+deviation.
+
+### Requirements and scenario coverage
+
+“Designed” denotes static traceability to architecture/code, not a passed
+runtime test. Every requirement and scenario was checked against the current
+artifacts; runtime behavior remains unverified.
+
+| Requirement / scenario | Design and inspected-code trace | Review disposition / unresolved point |
+|---|---|---|
+| FR-1 — username/email `id=username`, password `id=password`, Remember Me checkbox, Log in `name=login` | Architecture §5 maps controls to `LoginPage` and supplemental `REG-CONTROLS`; inspected `LoginPage` uses the named selectors and `LoginPageTests` checks visibility. | Covered at design level. Remember Me semantics are not defined by the source; presence is not persistence behavior. No live visibility check was run. |
+| FR-2 — “Lost your password?” link to the reset flow | Architecture §5 maps it to `LoginPage` / `REG-RECOVERY`; code clicks the link and checks a recovery URL/form. | Navigation is represented, not reset submission/completion. The source gives no destination; current code assumes specific recovery path patterns. Confirm the accepted observable flow/destination before claiming coverage. |
+| FR-3 — source-specified valid credentials, dashboard/My Account home, welcome; TS-LOG-001 | Architecture §5 maps the scenario to `LoginPageTests` and `LoginScenarioAssertions`; code requires runtime username, password and expected welcome identity, then checks dashboard, welcome and logout signals. | **Blocked from source-conformance claim.** Runtime environment input is policy-compliant but is not automatically equivalent to the PRD's fixed credentials. The conflict is unresolved; no credential values were accessed or reproduced. No login was run. |
+| FR-4 — valid account, wrong password, remain on login page, incorrect-password notice above form; TS-LOG-002 | Code guards for known username, submits an invalid password, checks semantic error tokens, unauthenticated state, retained form and `isErrorNoticeAtTopOfLoginForm()` geometry. | Core outcome and top-position observation are represented. Current assertion checks form presence rather than URL identity, so it does not conclusively establish “remain on the login page.” Exact message copy is unspecified. No live check was run. |
+| FR-5 — unregistered account, remain on login page, account-not-found error; TS-LOG-003 | Code submits configured unknown-user input and checks account-specific tokens, unauthenticated state and retained login form. Unit tests reject generic messages such as “Not found” and “Invalid username.” | Semantic error matching is suitably specific in inspected code. URL identity is not checked. The registered-account precondition conflicts with this scenario; whether the precondition is limited to TS-LOG-001/002 is unresolved. The input's actual unregistered status was not checked. |
+| NFRs | Requirements §Non-functional requirements states no measurable thresholds; architecture §5/§6 describes bounded waits, HTTPS policy, isolation and data-handling safeguards. | No NFR targets may be inferred. No security, performance, reliability, accessibility, browser-compatibility or slow-network behavior was tested. |
+| Source constraints and preconditions | Requirements identify active internet, a supported browser, registered account and login-page entry; browser set is unspecified. Architecture §1/§4 records internet/site, browser and account dependencies. | Registered-account precondition conflicts with TS-LOG-003. Supported browser set and environmental readiness are unknown. Treat Chrome/Firefox and headless paths as implementation capabilities, not source-approved support or run evidence. |
+| Scenario inventory and supplemental cases | Requirements list only TS-LOG-001..003. Architecture §5 and `LoginPageTests` label `REG-CONTROLS`, `REG-RECOVERY`, `REG-REMEMBER-RESTART`, and native blank-field checks as supplemental. | Inventory is correctly separated. Remember Me restart does not establish a source persistence requirement; native validation does not expand FR-1..FR-5. |
+
+### Findings
+
+| ID / severity | Finding, evidence and impact | Classification |
+|---|---|---|
+| DR-1 / High | **Fixed-credential criterion conflicts with policy.** Requirements FR-3 and TS-LOG-001 preserve a source-specified fixed credential criterion; canonical/repository guidance requires valid credentials only from runtime environment. Architecture §1 explicitly records no approved deviation and correctly avoids seeking or reproducing values. Until a human resolves the criterion/policy conflict, a compliant TS-LOG-001 cannot be planned or claimed. | Unresolved source/product decision; planning blocker |
+| DR-2 / High | **TS-LOG-003 conflicts with the registered-account precondition.** Requirements preconditions state a registered account, while FR-5/TS-LOG-003 requires an unregistered identifier. Architecture §1 recognizes the ambiguity but cannot decide its scope. Without clarification, test data/preconditions and coverage claims remain ambiguous. | Unresolved source/product decision; planning blocker |
+| DR-3 / Medium | **“Remain on the login page” is represented by form visibility, not page identity.** `LoginPageTests` and `LoginScenarioAssertions` for TS-LOG-002/003 check that the login form is visible and the user is not logged in; neither asserts the post-submit URL remains the login URL. A form could remain visible at a different route, so the current implementation does not prove the full source outcome. | Testability/implementation gap; architecture should require an explicit page-identity assertion |
+| DR-4 / Medium | **Recovery navigation assumes route details absent from the source.** `LoginPage.isPasswordRecoveryUrl` and `REG-RECOVERY` accept `/lost-password` or `/reset-password` patterns and a WooCommerce reset form selector. Requirements FR-2 specify a reset flow but no URL/route or form contract. This is a plausible project-specific implementation, not source-verified acceptance; a valid alternate reset route could fail. | Unresolved product acceptance plus implementation assumption |
+| DR-5 / Medium | **Chrome is launched with `--no-sandbox` by default.** `BaseTest.createDriver` unconditionally adds this option with the other Chrome flags. Architecture §4/§6 describes local Chrome/headless support but does not assess or justify disabling the browser sandbox. This weakens browser process isolation when visiting external content. No security behavior was tested. | Implementation/security-hardening gap |
+| DR-6 / Low | **Approval metadata is inconsistent.** The user has approved this fresh proposal for Stage 3, but `architecture.md` still says “human approval pending” and “does not authorize Stage 3.” Downstream readers could misapply the stage gate or mistake historical approval as current. This did not prevent the requested Stage 3 review. | Documentation/governance gap |
+
+Other reviewed areas: per-test WebDriver creation and sequential execution are
+appropriate for the scope; Remember Me's temporary profile and teardown are
+explicit; `BaseTest` handles partially configured drivers and warns on
+best-effort profile cleanup; explicit waits and page-load timeout are bounded
+with implicit wait zero. `waitForCondition` returns `false` on timeout, so
+callers must continue to assert the intended state rather than treating that
+return as success. The configured Surefire selector matches `LoginPageTests`;
+`LoginPageRunner` is not selected by `**/*Tests.java`. Dependencies are
+existing test-scoped dependencies; no addition is proposed. None of these
+static observations is execution or dependency-security evidence.
+
+The design is intentionally local and sequential for this small suite. No
+throughput, parallel-execution, remote-grid, or horizontal-scalability target
+is specified or required; those capabilities remain optional rather than
+implicit acceptance criteria. Chrome/Firefox and headless options are present
+in code, but the source does not define the supported set and none was run.
+
+The architecture's environment-only credentials, HTTPS-by-default URL policy,
+optional credential skip vs required-mode failure, sanitized diagnostic
+messages, disabled-by-default screenshots, and warning on profile cleanup
+failure are positive design safeguards. `ScreenshotUtil` redacts selected
+input fields only; it cannot guarantee that the rest of page content is safe.
+Extent/Surefire outputs remain local by current design, without CI upload or
+retention configuration. Preserve those limits and do not share artifacts
+without review and authorization.
+
+### Architecture risk register
+
+| Risk (trace) | Likelihood | Impact | Severity | Mitigation / owner action |
+|---|---|---|---|---|
+| Fixed-credential requirement cannot be met under current environment-only policy without a decision (DR-1; requirements FR-3, architecture §1/§4). | Certain until decided | High: TS-LOG-001 source compliance cannot be claimed | **High** | Resolve through authorized product/policy decision without accessing or disclosing credential values; document the approved test-data interpretation/deviation. Do not hardcode or expose credentials. |
+| Registered-account prerequisite makes TS-LOG-003 setup contradictory (DR-2; requirements preconditions/FR-5, architecture §1). | Certain in current source text | High: ambiguous setup and false coverage claims | **High** | Clarify applicability of the precondition and record it in the governing requirements before planning. |
+| Form remains visible at a URL other than the login page (DR-3; FR-4/FR-5, `LoginPageTests`). | Possible | Medium: false-positive negative-login result | **Medium** | Assert a stable login-page identity/URL after both negative submissions, alongside form and unauthenticated checks; validate the route only during authorized verification. |
+| Reset route differs from the two hard-coded path patterns or form selector (DR-4; FR-2, `LoginPage.java`). | Possible | Medium: false-negative or unsupported source-compliance claim | **Medium** | Obtain/record the accepted reset-flow observable or destination; make route/form assertion match that acceptance rather than assuming a product implementation. |
+| Chrome sandbox disabled while loading an external site (DR-5; `BaseTest.java`). | Certain for current Chrome runs | Medium to high: reduced browser process isolation if content is compromised | **Medium** | Remove the flag by default; if a specific execution environment requires it, document a narrow opt-in and compensating isolation. No browser/security test was performed. |
+| Screenshots/reports contain account or page data beyond selected redacted fields (architecture §6, `ScreenshotUtil`, `ExtentReportExtension`). | Low while screenshots remain disabled; higher if enabled/shared | High: sensitive data exposure | **Medium** | Keep capture disabled; before enabling, review page data and define restricted storage, access and retention. Avoid artifact upload/sharing absent explicit controls. |
+| Ten-second explicit waits may not tolerate slow/variable network or site response (architecture §4, `BasePage`/`TestData`). | Possible; unmeasured | Medium: intermittent timeout/failure | **Low-Medium** | Keep waits bounded; tune only from observed authorized verification and document the reason. No unbounded retries or performance claim. |
+| No workflow, resource fixtures, or verified browser/site availability exists in the inspected repository (architecture §3/§4). | Certain for current setup | Medium: local prerequisites and artifact controls are not automated | **Low-Medium** | Keep CI described as absent; verify browser, network and configuration only in a separately authorized runtime stage. Do not infer CI behavior. |
+
+### Gaps, assumptions and evidence limits
+
+- Requirements provenance is supplied-text-only; no Confluence page identifier,
+  version or independent source verification is available. The portal URL is
+  not proof of PRD provenance.
+- The fixed-credential conflict and registered-account/unknown-user conflict
+  are source/product decisions, not defects that an automation design can
+  resolve. No deviation is approved.
+- Supported browsers, reset destination/contract, exact-vs-semantic message
+  expectations, Remember Me behavior and measurable NFRs remain unspecified.
+  Architecture appropriately marks most as open; product owners must decide
+  what is needed for acceptance rather than infer extra requirements.
+- `src/test/resources` and `.github/workflows` do not exist. There is no
+  configured CI workflow, secret injection or artifact retention to assess.
+- **Static-only evidence:** no Maven command, unit/browser test, browser,
+  external site, network, dependency scan, security assessment, performance
+  exercise or CI job was run. No credential/runtime configuration was read.
+  Existing code and historical reports are not proof of runtime behavior.
+- No assertion is made about live-site behavior, Chrome/Firefox/headless
+  execution, slow networks, dependency safety, or performance.
+
+### Prioritized recommendations
+
+#### Must fix — resolve before planning or explicitly accepted by the human
+
+1. **M1 — Reconcile FR-3's fixed-credential criterion with repository policy.**
+   Obtain an authorized product/policy decision that preserves credential
+   confidentiality and records what would count as source-compliant TS-LOG-001.
+   Never request, read, reproduce, hardcode, log or persist the values. Until
+   resolved, mark TS-LOG-001 source compliance blocked.
+2. **M2 — Clarify the registered-account precondition for TS-LOG-003.**
+   Record whether it applies only to TS-LOG-001/002 and ensure the unregistered
+   test input is valid for the clarified scenario. Do not claim execution or
+   coverage based solely on a default identifier.
+
+#### Should fix — before merge or runtime verification
+
+3. **S1 — Assert login-page identity after TS-LOG-002 and TS-LOG-003.**
+   Retain the current unauthenticated/form/error checks and add a stable page
+   identity assertion so “remain on the login page” is directly testable.
+4. **S2 — Confirm the reset-flow acceptance boundary.**
+   Establish what observable destination/form constitutes the FR-2 reset flow,
+   then align the code's path and form checks; do not infer reset completion.
+5. **S3 — Reconsider the default Chrome `--no-sandbox` flag.**
+   Remove it unless there is a documented environment need; if retained,
+   restrict it to that environment and document isolation controls.
+6. **S4 — Reconcile the architecture approval status metadata.**
+   Record the 2026-11-18 approval or explicitly identify the task context as
+   authoritative before Stage 4; do not rely on the stale “pending” line or
+   historical review approval.
+
+#### Nice to have
+
+7. **N1 — Document artifact access and retention before screenshots are enabled
+   or reports are shared.** Current opt-in/default-off behavior is appropriate.
+8. **N2 — Adjust explicit-wait values only if authorized runtime evidence shows
+   slow-network failures; retain bounded waits and report any unrun checks.**
+
+### Approval conditions and handoff
+
+**Verdict: APPROVED WITH CONDITIONS.** The architecture's framework boundaries
+and safeguards are suitable to continue through design review, but approval
+does not settle product/source ambiguities.
+
+- **Stage 4 planning is blocked** until M1 and M2 are resolved or the human
+  explicitly accepts each as an open limitation. Acceptance must not be
+  represented as evidence of source conformance or as a passed scenario.
+- S1–S4 should be tracked in the appropriate follow-up before merge or
+  verification. This review does not authorize implementation, test execution,
+  external-site access, or Stage 4.
+- The Stage 3 deliverable is this current section. The 2026-11-03 review below
+  is retained in full as historical evidence only.
+
+---
+
+# Historical Review Archive — 2026-11-03
+
+The following review is retained unchanged for historical traceability. Its
+requirements baseline, findings, verdict and stage status do not apply to the
+2026-11-18 requirements/architecture reviewed above.
+
 ## Current Disposition — 2026-11-03
 
 The architecture was approved at 00:33 (+05:30). The source-baseline limitation was explicitly accepted at 00:39; this does not independently verify the current Confluence page or its removal of the former criterion. Stale architecture approval metadata was corrected. M1 and M2 are resolved or explicitly accepted for planning. Stages 4, 5, and 6 are complete; Stage 6 **PASS WITH LIMITATIONS** was accepted at 00:57. Focused verification reports 28 tests passed, zero failures, errors, or skips. All 9 Chrome scenarios remain **UNRUN**; no live-site behavior is claimed. The current Confluence source removal remains independently unverified. S1–S4 are recorded as completed focused work in the current plan/verification; live evidence remains unrun.

@@ -7,6 +7,8 @@ user-invocable: false
 
 # Architecture Agent
 
+Before starting, read the [architecture instructions](../instructions/architecture.instructions.md).
+
 ## Purpose and inputs
 
 Own Stage 2 architecture for this Java 21 / Maven / Selenium 4 / JUnit 5 login

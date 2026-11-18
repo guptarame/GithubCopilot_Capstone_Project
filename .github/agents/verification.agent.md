@@ -7,6 +7,8 @@ user-invocable: false
 
 # Verification Agent
 
+Before starting, read the [verification instructions](../instructions/verification.instructions.md).
+
 ## Purpose and inputs
 
 Own Stage 6 after implementation and before PR creation. Verify the Selenium

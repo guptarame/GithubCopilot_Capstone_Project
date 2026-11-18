@@ -7,6 +7,8 @@ user-invocable: false
 
 # Code Review Agent
 
+Before starting, read the [code-review instructions](../instructions/code-review.instructions.md).
+
 ## Purpose and inputs
 
 Own Stage 8 review of the pull request diff. Review code quality and correctness;

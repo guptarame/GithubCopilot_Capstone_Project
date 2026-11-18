@@ -14,23 +14,30 @@ final class LoginScenarioAssertions {
     }
 
     static void assertInvalidPasswordOutcome(
-            String message, boolean loggedIn, boolean loginFormVisible, boolean errorAtTopOfForm) {
+            String message, boolean loggedIn, boolean loginFormVisible,
+            boolean loginPageIdentityMatches, boolean errorAtTopOfForm) {
         assertTrue(containsAny(normalize(message), TestData.INVALID_PASSWORD_MESSAGE_TOKENS),
                 "Expected an incorrect-password style error message.");
         assertAll(
                 () -> assertFalse(loggedIn, "Invalid login must not authenticate the user."),
-                () -> assertTrue(loginFormVisible, "Invalid login should remain on the login page."),
+                () -> assertTrue(loginFormVisible, "Expected the login form to remain visible after invalid login."),
+                () -> assertTrue(loginPageIdentityMatches,
+                        "Expected invalid login to remain at the configured login-page URL."),
                 () -> assertTrue(errorAtTopOfForm,
                         "Expected the incorrect-password notice above the login form.")
         );
     }
 
-    static void assertUnknownUserOutcome(String message, boolean loggedIn, boolean loginFormVisible) {
+    static void assertUnknownUserOutcome(
+            String message, boolean loggedIn, boolean loginFormVisible, boolean loginPageIdentityMatches) {
         assertTrue(containsAny(normalize(message), TestData.UNKNOWN_USER_MESSAGE_TOKENS),
                 "Expected feedback that the account is unregistered or does not exist.");
         assertAll(
                 () -> assertFalse(loggedIn, "Unknown-account login must not authenticate the user."),
-                () -> assertTrue(loginFormVisible, "Unknown-account login should remain on the login page.")
+                () -> assertTrue(loginFormVisible,
+                        "Expected the login form to remain visible after unknown-account login."),
+                () -> assertTrue(loginPageIdentityMatches,
+                        "Expected unknown-account login to remain at the configured login-page URL.")
         );
     }
 

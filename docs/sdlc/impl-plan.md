@@ -1,3 +1,161 @@
+# Stage 4 Implementation Plan — Current Authoritative Plan (2026-11-18)
+
+## Authority, baseline, and scope
+
+| Item | Current Stage 4 authority |
+|---|---|
+| Project | Java 21 / Maven / Selenium 4 / JUnit 5 automation of the external customer login flow. Framework work only; no website or authentication-service changes. |
+| Planning date | 2026-11-18 |
+| Requirements | [`requirements.md`](requirements.md), analysis dated 2026-11-18; FR-1..FR-5 and source scenarios TS-LOG-001..003. PRD text was supplied in conversation; Confluence was not independently retrieved or verified. |
+| Architecture | [`architecture.md`](architecture.md), proposal dated 2026-11-18. The user explicitly approved this fresh proposal for Stage 3 notwithstanding its stale “approval pending” status line. This plan treats that user approval as authoritative; it does not edit the architecture document or rely on its 2026-11-03 approval. |
+| Design review | [`design-review.md`](design-review.md), current 2026-11-18 section: **APPROVED WITH CONDITIONS**. The user explicitly accepted carrying M1/DR-1 and M2/DR-2 as open limitations into planning. Acceptance permits Stage 4 planning only: it is not resolution, deviation, source conformance, or authorization to use credential literals. |
+| Static baseline inspected | Current `src/test/java/Github_Copilot/` classes and tests, `pom.xml`, README, repository guidance, planning rules, architecture, design review, and orchestrator. “Present” below means static presence only. No tests were run, no browser/site/network was accessed, and no credentials or runtime configuration were read. |
+| Environment / CI | Maven/Surefire selects `**/*Tests.java`; existing dependencies suffice. No `.github/workflows/` directory or configured CI workflow exists. Local Chrome/Firefox driver creation is capability, not evidence of browser availability or PRD-supported browser status. |
+| Scope boundary | Preserve source criteria, distinguish supplemental regressions, and plan only framework changes. No credentials, account access, external-site access, test execution, or source-code changes occur in Stage 4. |
+
+This section is the **only authoritative Stage 4 plan for the 2026-11-18 baseline**. The 2026-11-03 plan and its Stage 5/6 records are retained verbatim below the historical boundary for traceability. Their approvals, prior dispositions, outcomes, test counts, authorizations, and evidence do not apply to this baseline and must not be carried forward.
+
+## Current inspected baseline and disposition
+
+| Architecture area | Static observation and current disposition |
+|---|---|
+| Maven / Surefire / dependencies | Java 21, existing Selenium, WebDriverManager, JUnit 5, ExtentReports, and Surefire dependencies are configured; test selection is `**/*Tests.java`. No dependency change or CI workflow is planned. |
+| `TestConfig` / `TestData` | Non-secret setting precedence and HTTPS/local-HTTP policy are present. Page-load timeout is bounded to positive values through 60 seconds, defaults to 10 seconds, and has focused boundary tests. Valid credentials and welcome identity use runtime environment access only. No new configuration or data-file framework is needed. Keep this policy; FR-3's conflict remains blocked as described below. |
+| `BaseTest` / driver lifecycle | Each test creates a Chrome or Firefox driver, applies the configured page-load timeout and zero implicit wait, sets viewport/headless options, and tears down its driver. Remember Me uses a temporary Chrome profile across restart with cleanup; lifecycle tests use driver doubles. Do not schedule this completed baseline again. **Improvement needed:** Chrome includes `--no-sandbox` by default (S3/DR-5). |
+| `BasePage` / `LoginPage` | Existing bounded explicit waits cover control interaction, submission outcomes, dashboard/logout signals, error visibility, and recovery URL navigation. There are no fixed sleeps. Negative outcomes currently assert a retained form and unauthenticated state but do not assert that the current URL remains the login page (S1/DR-3). Recovery currently assumes route patterns and checks the reset form after URL navigation without a dedicated form-ready wait (S2/DR-4). Improve only these defined gaps; do not add unbounded waits/retries. |
+| Scenario tests / assertions | Three source tests exist; successful login asserts dashboard, welcome identity, and logout. Invalid-password asserts semantic feedback, unauthenticated/form state, and top-of-form position. Unknown-user assertion narrows accepted messages to account-specific meanings. None has live-site evidence. FR-3 and TS-LOG-003 remain gated by M1 and M2 respectively. |
+| Supplementary browser regressions | Blank-both, blank-username, blank-password, Remember Me same-profile restart, recovery navigation, and control visibility checks are all present and explicitly labeled `REG-*`. Keep separate from PRD scenarios. Do not imply the field checks satisfy any other requirement, or that Remember Me restart is a source guarantee. |
+| Guards, listeners, logs, reports, screenshots | Credential guards distinguish optional skips from required failures; lifecycle reporting records pass/fail/skip and duration; Extent output is local; failure screenshots are opt-in. Logging avoids raw exception messages and screenshots redact selected fields only. Preserve safe, non-masking diagnostics and keep screenshots off by default. Page data beyond selected fields may remain sensitive. |
+| Documentation / resources | README describes runtime-only credentials, supplemental-vs-source cases, and local artifact restrictions. `src/test/resources` is absent; no test-data resource structure is required by the approved architecture. Reconcile documentation only if implementation changes scenario classification or accepted behavior. |
+
+Static inspection is not test evidence: it does not establish that the external site is available, browser setup works, selectors or messages match current site behavior, credentials are valid, an unknown identifier is truly unregistered, or generated artifacts are safe.
+
+## Blocking decisions and review-condition disposition
+
+The explicit user authorization to carry both blockers open satisfies the **Stage 4 planning gate only**. Keep the following decisions visibly open in all implementation and verification handoffs:
+
+| Condition | Current disposition / owner / gate |
+|---|---|
+| **M1 / DR-1 — FR-3 fixed-credential criterion conflicts with runtime-environment-only policy.** | **Open; owner: human product/policy owner.** Do not seek, read, reproduce, pass, log, report, capture, or commit the PRD credential literals. Runtime environment variables are the safe framework interface but do not establish that TS-LOG-001 meets the source-specified fixed-credential criterion. Before asserting FR-3/TS-LOG-001 source compliance or executing it for source acceptance, obtain and record an authorized decision that reconciles criterion and policy. No approved deviation exists. |
+| **M2 / DR-2 — registered-account precondition conflicts with unregistered TS-LOG-003.** | **Open; owner: human product/requirements owner.** Clarify whether the registered-account precondition applies only to TS-LOG-001/002 and define an authorized way to use an unregistered identifier. Before claiming TS-LOG-003 source conformance, require that decision and evidence the test identifier is unregistered without exposing it. The user’s acceptance to carry the conflict is not resolution. |
+| **S1 / DR-3 — negative login “remain on login page” checks form, not page identity.** | Address in **PLN-04**: assert stable login-page identity after TS-LOG-002 and TS-LOG-003 in addition to retained form, unauthenticated state, and error checks. |
+| **S2 / DR-4 — recovery path/form are assumptions absent from FR-2.** | **PLN-05**, conditional on product acceptance: confirm an observable reset-flow boundary, then align bounded navigation/form waits and supplemental assertion to that boundary. Until then, retain current check as an unverified project-specific regression; do not claim source acceptance or infer reset submission/completion. |
+| **S3 / DR-5 — Chrome `--no-sandbox` is unconditional.** | Address in **PLN-03**: remove it by default. Re-introduce only with a documented, narrowly scoped environment need and compensating isolation; no such need is currently established. |
+| **S4 / DR-6 — architecture approval metadata is stale.** | **Disposition in this plan:** the user’s explicit 2026-11-18 approval for Stage 3 is authoritative for this plan; the architecture status line is not silently treated as corrected. No architecture edit is permitted in this Stage 4 task. A later architecture-document owner may reconcile metadata without rewriting this approval history. |
+| **N1 — report/screenshot access and retention.** | Existing default-off screenshot behavior and README local storage/access/retention guidance are statically present. No new task to enable screenshots or upload artifacts; preserve restrictions and revisit only before enabling/sharing. |
+| **N2 — slow-network wait sensitivity.** | Existing waits are bounded (10-second defaults); no slow-network tool or result is available, and no measurable NFR is specified. Do not tune from speculation. Adjust only from authorized runtime evidence, then document the bounded change and rerun affected checks. |
+
+## Task summary and estimates
+
+**7 tasks; estimated total 13 engineering hours** (decision-owner time is approximate; excludes external approval latency, account/browser/site provisioning, test-data qualification, and additional defect repair). Complexity: **3 Small, 4 Medium**. Effort is an estimate, not actual work or validation evidence.
+
+| ID | Task / deliverable | Priority | Complexity | Estimate | Dependencies |
+|---|---|---:|---|---:|---|
+| **PLN-01** | Obtain and record the M1/DR-1 policy/product decision; keep TS-LOG-001 source-compliance gate open until reconciled. | P0 | Small | 0.5 h | None |
+| **PLN-02** | Obtain and record the M2/DR-2 precondition decision and authorized unknown-account test-data qualification; do not treat default data as evidence. | P0 | Small | 0.5 h | None |
+| **PLN-03** | Remove Chrome `--no-sandbox` as a default; document/test any narrowly scoped exception only if an actual environment need is approved. | P1 | Small | 1 h | None |
+| **PLN-04** | Add stable login-page identity assertions after negative submissions and retain deterministic bounded error/outcome synchronization. | P1 | Medium | 2 h | None |
+| **PLN-05** | After FR-2 reset-flow acceptance is established, align recovery navigation/form waits and supplemental assertion to that observable boundary. If no decision is available, explicitly defer the behavior-specific change and retain it as unverified. | P1 | Medium | 2 h | Product acceptance for reset-flow boundary |
+| **PLN-06** | Focused Stage 5 integration: compile/test-compile; run selected browser-independent tests; add deterministic tests for PLN-03/04/05 as applicable; check data guards, lifecycle/reporting, labels, and docs; return exact results and limitations. | P0 | Medium | 3 h | PLN-03, PLN-04, and PLN-05 implementation or documented deferral |
+| **PLN-07** | Conditional Stage 6 validation and report: execute only authorized, feasible Chrome/site scenarios after environment and decision gates; otherwise report each as UNRUN with reason. Keep browser-independent validation separate. | P1 | Medium | 4 h | PLN-06; PLN-01 and PLN-02 decisions before their respective source scenarios; PLN-05 acceptance before FR-2 source claim |
+
+### Task details and measurable acceptance criteria
+
+**PLN-01 — M1 decision gate (P0, Small, 0.5 h, owner: human product/policy).** Deliverable: a recorded authorized interpretation of FR-3 versus repository policy, without including credential values. Acceptance: decision explicitly states whether and how the source criterion can be satisfied under runtime-environment-only handling and records any approved deviation separately from the source PRD criterion. Preserve FR-3 wording; do not treat environment-provided credentials as automatically equivalent. Any later requirements-baseline change requires separate authorization and must not rewrite source history. Until a decision is recorded, task remains open and TS-LOG-001 is not source-compliant by claim. No credentials are requested or accessed in planning.
+
+**PLN-02 — M2 decision gate (P0, Small, 0.5 h, owner: human product/requirements).** Deliverable: recorded clarification of the registered-account precondition and safe unknown-identifier qualification, separate from the source scenario text. Acceptance: the decision states whether the precondition applies to TS-LOG-003 and how test data will be qualified; no test input is labeled “unregistered” solely by default or appearance. Preserve current source wording unless a separately authorized requirements revision is approved. Until clarified, TS-LOG-003 source conformance remains open.
+
+**PLN-03 — Chrome launch hardening (P1, Small, 1 h).** Deliverable: scoped `BaseTest` change and focused browser-options test. Acceptance: Chrome options do not contain `--no-sandbox` by default in headless or headed configurations; no weaker TLS or unrelated browser flags are added; if a narrow exception is later authorized, it is opt-in and its rationale/isolation control is documented. Firefox behavior is unchanged. No browser launch is required for the deterministic option test.
+
+**PLN-04 — negative-case page identity (P1, Medium, 2 h).** Deliverable: page-object state/URL observation and focused assertions/tests for TS-LOG-002/003. Acceptance: both negative scenario assertions require (1) unauthenticated state, (2) retained login form, (3) the appropriate semantic error, and (4) post-submit identity matching the configured login page using a stable comparison that tolerates only approved URL normalization. TS-LOG-002 retains top-of-form notice assertion. Tests prove a different route with a visible login form fails; normal expected identity succeeds. Use existing bounded waits; no fixed sleep. Live route behavior remains subject to Stage 6.
+
+**PLN-05 — recovery-flow acceptance and synchronization (P1, Medium, 2 h; implementation conditional on product decision).** Deliverable: product-approved reset-flow observable and, if obtained, aligned page-object wait/assertion plus deterministic test. Acceptance when approved: the agreed route/form/state is checked with a bounded explicit wait; unsupported assumptions about exact path or reset completion are removed; the supplemental case remains separate from TS-LOG scenarios. If no decision is obtained, record the task as deferred, retain no claim that current path assumptions prove FR-2, and do not block unrelated safe tasks.
+
+**PLN-06 — integration and focused evidence (P0, Medium, 3 h).** Deliverables: Stage 5 handoff with changed files, task status, exact Maven commands/results, and environment limitations. Acceptance: `mvn -q -DskipTests compile test-compile` passes; selected browser-independent tests for config/URL/credential guards/scenario assertions/lifecycle and the new state/options/recovery tests (if applicable) pass with zero failures/errors; report skipped/aborted and unrun checks separately, not as passes. Confirm Surefire discovers all added `*Tests` classes. Review required source and supplemental test labels, bounded waits, HTTPS policy, runtime-only credentials, diagnostics and cleanup, report outcome separation, screenshots still disabled by default, and no new dependency or CI claim. This Stage 4 plan records no actual run.
+
+**PLN-07 — conditional verification (P1, Medium, 4 h when feasible).** Deliverable: Stage 6 verification report. Acceptance: browser/site cases run only when Chrome/driver, internet/site availability, approved runtime test inputs and safe environment are actually available; record each pass/fail/skip/unrun and exact command. Do not claim FR-3/TS-LOG-001 source compliance before PLN-01 resolves, TS-LOG-003 compliance before PLN-02 resolves, or FR-2 acceptance before its observable is approved. Chrome is the only browser planned for Stage 6 per orchestration guidance; Firefox/cross-browser is not a PRD criterion and remains unrun unless separately authorized. No live-site, credentials, or test run is performed by this planning task.
+
+## Dependency map and phased execution
+
+```text
+PLN-03 (Chrome options) ─┐
+PLN-04 (page identity) ──┼─> PLN-06 ─> PLN-07
+PLN-05 (implementation OR documented deferral) ┘
+  ▲
+  └── FR-2 product acceptance
+
+PLN-01 (M1 decision) ─┐
+                      ├─> PLN-07 (source scenarios only after each gate clears)
+PLN-02 (M2 decision) ─┘
+```
+
+Dependencies are one-way and acyclic. PLN-07 may run the safe browser-independent and eligible supplemental checks while a source gate is open, but must mark affected source scenarios unrun/blocked and cannot claim conformance. The specified 4-hour PLN-07 estimate covers feasible checks/reporting, not external waiting or unavailable account/site access.
+
+| Phase | Tasks | Exit condition |
+|---|---|---|
+| 1 — Human decision gates | PLN-01, PLN-02; product decision for PLN-05 when available | M1/M2 remain visibly open until authorized decisions are recorded. PLN-05 can be explicitly deferred without stopping independent framework tasks. |
+| 2 — Framework fixes | PLN-03, PLN-04; PLN-05 only after reset-flow acceptance | Chrome default is hardened; negative page identity is asserted; recovery scope is implemented only against accepted observable. |
+| 3 — Integration and focused tests | PLN-06 | Compile and browser-independent focused checks reported accurately; acceptance criteria and traceability checked. |
+| 4 — Conditional validation | PLN-07 | Only environment-feasible and decision-eligible checks executed; all unavailable coverage stated as unrun, never inferred from static presence. |
+
+## Requirements, scenarios, architecture, and risk traceability
+
+| Source item / component / risk | Current evidence and planned coverage / disposition |
+|---|---|
+| **FR-1 — source controls** | Selectors and visibility checks exist in `LoginPage` / `REG-CONTROLS`; retain as separate supplementary regression. Planned by PLN-06/07 validation; no new implementation unless focused checks expose a gap. |
+| **FR-2 — reset link / flow** | `REG-RECOVERY` currently navigates under assumed path patterns and checks form visibility. PLN-05 requires product-confirmed observable and bounded form readiness; until accepted, source coverage remains unverified. |
+| **FR-3 / TS-LOG-001 — valid login, dashboard, welcome** | Existing test and dashboard/welcome assertions are statically present; valid identity is runtime environment-only. **M1/PLN-01 open gate.** Neither static code nor runtime credentials alone establishes fixed-source-credential compliance. |
+| **FR-4 / TS-LOG-002 — incorrect password, login page, top notice** | Existing semantic error, unauthenticated, retained form, and top-position assertions statically present. PLN-04 adds explicit login-page identity; PLN-06/07 verify only as allowed. Needs authorized known-account runtime setup for live execution. |
+| **FR-5 / TS-LOG-003 — unregistered user, account-not-found, login page** | Existing account-specific message assertion and retained form statically present. PLN-04 adds page identity. **M2/PLN-02 open gate** for precondition and verified unregistered test identifier; default identifier is not proof. |
+| **Supplemental regressions** | Blank-both, blank-username, blank-password (`REG-NATIVE-*`), Remember Me restart (`REG-REMEMBER-RESTART`), reset navigation (`REG-RECOVERY`), required controls (`REG-CONTROLS`) exist separately; preserve their labels and non-source status. Validate as environment permits; do not equate any with a different FR/TS. |
+| **Configuration / page-load timeout** | Positive bounded timeout, 10-second default, fallback, and `BaseTest` integration with zero implicit wait are already implemented and statically tested. No new timeout task. PLN-06 preserves checks. |
+| **Driver lifecycle / headless / profile** | Fresh Chrome/Firefox setup/teardown, safe non-sandbox-related headless options, same temporary Chrome profile across Remember Me restart, cleanup, and synthetic lifecycle tests exist. PLN-03 addresses default sandbox flag only; no browser support claim. |
+| **Page objects / synchronization** | Shared explicit waits and login outcome observation exist. PLN-04 covers page identity; PLN-05 covers reset-flow readiness only after acceptance. Dashboard/logout and error waits already exist; PLN-06 verifies no unbounded wait/sleep is introduced. |
+| **Test data / guards / logs / reports / screenshots / cleanup** | Existing `TestData`, synthetic unit tests, credential guards, JUnit lifecycle outcome reporting, local Extent output, redacting logger, cleanup warning, and opt-in screenshot path are retained. PLN-06 reviews non-masking failure behavior and labels; no new data resource or reporting framework is planned. N1 restrictions remain. |
+| **Maven / CI / docs** | Existing Maven/Surefire configuration retained. No CI workflow exists; no CI task, secret store, artifact upload, or workflow behavior is invented. README artifact limitations are present; update only if implementation acceptance changes. |
+| **DR-1 / M1; fixed credential-policy conflict** | PLN-01, human owner and source-compliance gate; remains open as accepted planning limitation. |
+| **DR-2 / M2; registered vs unregistered conflict** | PLN-02, human owner and TS-LOG-003 gate; remains open as accepted planning limitation. |
+| **DR-3 / S1; negative page identity** | PLN-04 implementation and focused test. |
+| **DR-4 / S2; assumed reset route/form** | PLN-05 conditional product acceptance and synchronization; current regression remains unverified until resolved. |
+| **DR-5 / S3; Chrome sandbox** | PLN-03 removes default flag; exception only by documented need. |
+| **DR-6 / S4; stale architecture metadata** | Current plan explicitly records user-authorized approval as authority. No edits to architecture in Stage 4. |
+| **N1; artifact exposure** | Existing README and screenshots-off policy verified statically; no enablement/upload task. Sensitive page content beyond selected fields remains a risk. |
+| **N2; 10-second waits vs slow network** | Keep bounded defaults absent authorized evidence. No slow-network tool/threshold is specified; defer adjustment absent an observed, authorized failure. |
+| **Source provenance limitation** | Requirements and architecture rely on user-supplied PRD text, not independently verified Confluence. Preserve this qualification in acceptance/reporting; no source-retrieval task or speculative requirement is added. |
+| **Site, account, browser, network and driver availability** | External dependencies are unverified and not accessed during planning. PLN-07 is conditional; unavailable cases are reported unrun. Do not access credentials, request credentials, or assume live-site availability in Stage 4. |
+| **Repeated runs / cross-browser / performance / reliability** | Not specified as source requirements or measurable NFRs. No repeated-run reliability or cross-browser campaign is a merge criterion; only consider additional execution if an authorized environment and a concrete acceptance need arise. No performance or slow-network claim is planned. |
+
+## Success criteria and Stage 5 handoff
+
+Stage 4 is complete when this current section is authoritative, all FR-1..FR-5 and TS-LOG-001..003 are traceable, each current architecture component and design-review condition has a task or explicit completed/deferred disposition, all risk gates and environment limits are visible, and the task graph is acyclic. This plan meets that planning boundary; it does **not** close M1/M2, prove PRD conformance, approve a deviation, or provide runtime evidence.
+
+Stage 5 may implement PLN-03/04 and pursue PLN-05 only after its product acceptance is available. The implementation agent must preserve the open M1/M2 gates, avoid credential/site access unless separately authorized for a later stage, retain the source-vs-supplemental distinction, execute no unsafe testing, and return a task-by-task handoff. PLN-01/02 are human-owned decisions; implementation agents cannot resolve them by changing source requirements or by using environment credentials. Stage 6 remains conditional on its own actual environment and approval gates. **No Stage 5 work is started by this Stage 4 deliverable.**
+
+## Stage 5 implementation status — 2026-11-18
+
+| Task | Status | Evidence / limitation |
+|---|---|---|
+| **PLN-01** | **Open; not resolved** | No policy/product decision was made. Do not claim FR-3 or TS-LOG-001 source conformance. No credential values were requested or accessed. |
+| **PLN-02** | **Open; not resolved** | No precondition decision or unknown-account qualification was made. Do not claim TS-LOG-003 source conformance. |
+| **PLN-03** | **Implemented; focused tests passed** | Removed Chrome's default `--no-sandbox` option. The selected lifecycle suite includes a browser-independent check of headed and headless Chrome options. No browser startup was verified. Firefox behavior is unchanged. |
+| **PLN-04** | **Implemented; focused tests passed** | Added login-page URL identity comparison to the TS-LOG-002/003 assertions. Comparison requires matching scheme, host, effective port, path, query, and fragment; only trailing-slash and default-port normalization is tolerated. The selected URL-comparison and scenario-assertion suites cover this behavior, including a different-route-with-visible-form failure case. Live route behavior remains unverified. |
+| **PLN-05** | **Deferred** | Product-approved FR-2 reset-flow acceptance boundary is unavailable. Reset-route assumptions and recovery behavior were not changed; no FR-2 conformance is claimed. |
+| **PLN-06** | **Complete — focused Maven lifecycle passed** | The user ran the focused command below locally and reported PowerShell exit code `0`. The six local Surefire summaries show **30 tests, 0 failures, 0 errors, 0 skips**. The `test` lifecycle includes `compile` and `test-compile`; the separate compile-only command was not independently evidenced. No browser case was selected. |
+
+Stage 5 focused command (user-executed in PowerShell, 2026-11-18):
+
+```text
+mvn -q "-Dtest=TestConfigTests,CredentialTestGuardTests,LoginScenarioAssertionsTests,TestLifecycleTests,BaseTestLifecycleTests,LoginPageUrlTests" test
+```
+
+The run printed one generic WebDriver cleanup warning and returned exit code `0`. Suite totals: config 6, credential guards 4, scenario assertions 6, lifecycle classification 1, base lifecycle 8, URL identity 5. This evidence is for Stage 5, not an independent Stage 6 rerun.
+
+The source provenance caveat remains unchanged: requirements are based on supplied PRD text, not independently verified Confluence content. This status entry does not resolve M1/M2, authorize the reset-flow assumption, or record browser/site evidence.
+
+---
+
+> **HISTORICAL / SUPERSEDED PLAN ARCHIVE — 2026-11-03:** The following text is retained without rewriting its historical evidence. It is not authoritative for the 2026-11-18 baseline. Its approvals, decisions, task completion statements, test results, runtime limitations, and authorizations must not be reused as current evidence or status.
+
 # Stage 4 Implementation Plan — Authoritative Current Plan (2026-11-03)
 
 ## Context, Authority, and Stage Boundary

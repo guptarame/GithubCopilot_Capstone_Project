@@ -8,6 +8,8 @@ user-invocable: false
 
 # Requirements Agent
 
+Before starting, read the [requirements instructions](../instructions/requirements.instructions.md).
+
 ## Purpose and scope
 
 Own Stage 1 requirements analysis for this Java 21 / Maven / Selenium 4 / JUnit 5
